@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vimov options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Vimov</h1>
+      <p class="lede">Changes apply to open tabs as soon as you save. Settings sync with your Firefox account when add-on sync is on.</p>
+    </header>
+
+    <section>
+      <h2>Key mappings</h2>
+      <p>Your lines are applied on top of the default mappings, one statement per line.</p>
+      <textarea id="keymap" rows="9" spellcheck="false" placeholder="map <c-d> scrollHalfDown
+map F linkHints action=newTabFg
+unmap x"></textarea>
+      <ul class="problems" id="keymap-problems"></ul>
+
+      <details>
+        <summary>Syntax</summary>
+        <table class="syntax">
+          <tr><td><code>map &lt;keys&gt; &lt;command&gt; [option=value …]</code></td><td>Bind keys to a command, replacing any existing binding.</td></tr>
+          <tr><td><code>unmap &lt;keys&gt;</code></td><td>Remove a binding.</td></tr>
+          <tr><td><code>unmapAll</code></td><td>Remove every binding, defaults included.</td></tr>
+          <tr><td><code># …</code></td><td>A comment.</td></tr>
+        </table>
+        <p>Keys are the characters they type (<code>j</code>, <code>G</code>, <code>$</code>), or names in angle brackets: <code>&lt;esc&gt;</code> <code>&lt;enter&gt;</code> <code>&lt;tab&gt;</code> <code>&lt;space&gt;</code> <code>&lt;backspace&gt;</code> <code>&lt;up&gt;</code> <code>&lt;f1&gt;</code>. Sequences are written together: <code>gg</code>, <code>g&lt;c-d&gt;</code>.</p>
+        <p>Modifiers go before the key: <code>&lt;c-d&gt;</code> Ctrl, <code>&lt;a-p&gt;</code> Alt or Option, <code>&lt;m-k&gt;</code> Cmd or Meta, <code>&lt;s-tab&gt;</code> Shift with a named key. Shifted letters are capitals, so Ctrl+Shift+D is <code>&lt;c-D&gt;</code>. Write <code>&lt;lt&gt;</code> for a literal <code>&lt;</code> before a name.</p>
+        <p>A count before a command repeats or scales it: <code>5j</code> scrolls five steps, <code>3K</code> moves three tabs right.</p>
+      </details>
+
+      <details>
+        <summary>Commands</summary>
+        <div class="table-wrap">
+          <table id="commands">
+            <thead><tr><th>Command</th><th>What it does</th><th>Options</th><th>Default keys</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
+
+      <details>
+        <summary>Default mappings</summary>
+        <pre id="default-keymap"></pre>
+      </details>
+    </section>
+
+    <section>
+      <h2>Excluded sites</h2>
+      <p>One rule per line: a URL pattern, then optionally the keys to pass through to the page. With no keys, Vimov is off on matching pages. <code>*</code> matches anything; a pattern without <code>https://</code> covers the whole site.</p>
+      <textarea id="exclusions" rows="4" spellcheck="false" placeholder="mail.google.com
+*.youtube.com f j k l
+https://docs.google.com/*"></textarea>
+      <ul class="problems" id="exclusions-problems"></ul>
+    </section>
+
+    <section>
+      <h2>Link hints</h2>
+      <label class="field">
+        <span>Hint characters</span>
+        <input type="text" id="hintChars" spellcheck="false" autocomplete="off">
+      </label>
+      <p class="help-text">Labels are built from these, in order. Home-row keys are quickest to type.</p>
+      <ul class="problems" id="hintChars-problems"></ul>
+    </section>
+
+    <section>
+      <h2>Scrolling</h2>
+      <label class="field">
+        <span>Step for <code>j</code> and <code>k</code></span>
+        <input type="number" id="scrollStep" min="1" max="2000" step="10"> px
+      </label>
+      <ul class="problems" id="scrollStep-problems"></ul>
+      <label class="field">
+        <input type="checkbox" id="smoothScroll">
+        <span>Smooth scrolling</span>
+      </label>
+    </section>
+
+    <footer class="actions">
+      <button type="button" class="primary" id="save" disabled>Save</button>
+      <button type="button" id="reset">Restore defaults</button>
+      <span id="status" role="status"></span>
+    </footer>
+  </main>
+
+  <script src="../shared/commands.js"></script>
+  <script src="../shared/defaults.js"></script>
+  <script src="../shared/keys.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

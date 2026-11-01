@@ -1,0 +1,11 @@
+/* Find-mode match highlights (CSS Custom Highlight API). These must live in
+   the page's styles because the highlighted text is the page's. */
+::highlight(vimov-find) {
+  background-color: #fde68a;
+  color: #1c1917;
+}
+
+::highlight(vimov-find-current) {
+  background-color: #fb923c;
+  color: #1c1917;
+}

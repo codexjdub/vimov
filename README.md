@@ -1,0 +1,71 @@
+# Vimov
+
+Vim-style keyboard browsing for Firefox: scrolling, link hints, find, and tab
+commands, with a small config language that's easy to read.
+
+## Try it
+
+1. Open `about:debugging#/runtime/this-firefox` in Firefox 140 or later.
+2. Click **Load Temporary Add-on…** and pick `manifest.json` in this folder.
+3. Press `?` on any page for the list of keys.
+
+Temporary add-ons last until Firefox restarts. To keep it running while you
+edit, use [web-ext](https://github.com/mozilla/web-ext), which reloads on save:
+
+```bash
+npx web-ext run --ignore-files 'dev/**'
+```
+
+## Keys
+
+| Keys | Does |
+| --- | --- |
+| `j` `k` `h` `l`, `d` `u`, `gg` `G` | Scroll; half page; top and bottom |
+| `f`, `F`, `yf` | Link hints: click, open in a new tab, copy the URL |
+| `/`, `n` `N` | Find in page; next and previous match |
+| `K` `J` (or `gt` `gT`), `g0` `g$` | Next and previous tab; first and last tab |
+| `t`, `x`, `X`, `yt` | New, close, reopen and duplicate a tab |
+| `H` `L`, `r`, `gu` `gU`, `yy` | Back and forward, reload, up the URL, copy the URL |
+| `i`, `gi` | Pass keys to the page until Esc; focus a text field |
+
+A count repeats or scales a command: `5j`, `3K`. Esc leaves a text field,
+closes hints or find, and clears find highlights.
+
+## Configure
+
+The options page (`about:addons` → Vimov → Preferences) takes mappings on top
+of the defaults:
+
+```
+map <c-d> scrollHalfDown
+map F linkHints action=newTabFg
+unmap x
+```
+
+Commands take `option=value` settings, listed with every command on the options
+page. Excluded sites are a URL pattern per line, optionally followed by keys to
+pass through to the page:
+
+```
+mail.google.com
+*.youtube.com f j k l
+```
+
+## Development
+
+- `src/content/` runs in every page; `main.js` routes keys to the active mode
+  or the keymap, and `actions.js` holds the command implementations.
+- `src/shared/` is used by both the content script and the options page: the
+  command registry, default keymap and key-notation parser.
+- `src/background.js` does the tab work a content script can't.
+- `dev/playground.html` is a page of tricky cases (hidden and covered links,
+  shadow DOM, inner scrollers, text split across elements). Open it in Firefox
+  with Vimov loaded, or run the content scripts in any browser through the
+  harness: `node dev/serve.mjs`, then open
+  `http://127.0.0.1:8765/dev/playground.html?harness`.
+
+## Limits
+
+Firefox doesn't run extensions on `about:` pages, `addons.mozilla.org`, the
+PDF viewer or Reader View, so Vimov can't work there. Link hints and find cover
+the frame that has focus; hints across iframes are planned.

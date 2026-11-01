@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Vimov",
+  "version": "0.1.0",
+  "description": "Browse with Vim-style keys: scrolling, link hints, find and tab commands.",
+  "icons": {
+    "48": "icons/vimov.svg",
+    "96": "icons/vimov.svg"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "vimov@vimov-ff",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "permissions": ["storage", "sessions", "clipboardWrite"],
+  "background": {
+    "scripts": ["src/background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "all_frames": true,
+      "run_at": "document_start",
+      "css": ["src/content/content.css"],
+      "js": [
+        "src/shared/commands.js",
+        "src/shared/defaults.js",
+        "src/shared/keys.js",
+        "src/content/dom.js",
+        "src/content/ui.js",
+        "src/content/core.js",
+        "src/content/scroll.js",
+        "src/content/hints.js",
+        "src/content/find.js",
+        "src/content/help.js",
+        "src/content/actions.js",
+        "src/content/main.js"
+      ]
+    }
+  ],
+  "options_ui": {
+    "page": "src/options/options.html",
+    "open_in_tab": true
+  }
+}
