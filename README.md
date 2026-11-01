@@ -13,8 +13,12 @@ Temporary add-ons last until Firefox restarts. To keep it running while you
 edit, use [web-ext](https://github.com/mozilla/web-ext), which reloads on save:
 
 ```bash
-npx web-ext run --ignore-files 'dev/**'
+npx web-ext run
 ```
+
+`npx web-ext build` makes the zip for addons.mozilla.org; `web-ext-config.mjs`
+keeps development files out of it. The listing text lives in
+`store/amo-listing.md`.
 
 ## Keys
 
@@ -69,3 +73,7 @@ mail.google.com
 Firefox doesn't run extensions on `about:` pages, `addons.mozilla.org`, the
 PDF viewer or Reader View, so Vimov can't work there. Link hints and find cover
 the frame that has focus; hints across iframes are planned.
+
+## License
+
+[MIT](LICENSE)
