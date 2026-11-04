@@ -18,8 +18,9 @@ const TYPES = {
 };
 
 createServer(async (req, res) => {
-  const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
   try {
+    // Inside the try: a malformed escape such as %E0 throws.
+    const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
     const body = await readFile(join(root, path.endsWith('/') ? `${path}index.html` : path));
     res.writeHead(200, { 'Content-Type': TYPES[extname(path)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
     res.end(body);

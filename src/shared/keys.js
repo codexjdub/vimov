@@ -123,14 +123,16 @@ Vimov.keys = (() => {
   }
 
   function parseOptions(command, tokens) {
-    const spec = Vimov.COMMANDS[command];
+    // Own properties only, so names like "toString" aren't taken for commands
+    // or options.
+    const spec = Object.hasOwn(Vimov.COMMANDS, command) ? Vimov.COMMANDS[command] : null;
     if (!spec) throw new Error(`Unknown command "${command}"`);
     const options = {};
     for (const token of tokens) {
       const match = /^(\w+)=(.+)$/.exec(token);
       if (!match) throw new Error(`Expected option=value, got "${token}"`);
       const [, name, value] = match;
-      const type = spec.options?.[name];
+      const type = spec.options && Object.hasOwn(spec.options, name) ? spec.options[name] : null;
       if (!type) throw new Error(`${command} has no option "${name}"`);
       if (Array.isArray(type)) {
         if (!type.includes(value)) throw new Error(`${name} must be one of: ${type.join(', ')}`);
@@ -207,16 +209,19 @@ Vimov.keys = (() => {
 
   // Exclusion rules: one per line, a URL pattern then optional keys to pass
   // through to the page. "*" matches anything. A pattern without a scheme
-  // matches from the host onwards, so "mail.google.com" covers the whole site.
+  // matches from the host onwards: "mail.google.com" covers that whole site
+  // (but not mail.google.community), "github.com/me" everything under it.
   function parseExclusions(text = '') {
     const rules = [];
     const errors = [];
     for (const { line, number } of lines(text)) {
       const [pattern, ...pass] = line.split(/\s+/);
       try {
-        let glob = pattern.includes('://') ? pattern : `*://${pattern}`;
-        if (!pattern.includes('://') && !glob.endsWith('*')) glob += '*';
-        const re = new RegExp(`^${glob.split('*').map(escapeRegExp).join('.*')}$`, 'i');
+        const hasScheme = pattern.includes('://');
+        const glob = hasScheme ? pattern : `*://${pattern}`;
+        let rest = '';
+        if (!hasScheme && !glob.endsWith('*')) rest = pattern.includes('/') ? '.*' : '(?::\\d+)?(?:[/?#].*)?';
+        const re = new RegExp(`^${glob.split('*').map(escapeRegExp).join('.*')}${rest}$`, 'i');
         rules.push({ pattern, re, passKeys: new Set(pass.flatMap(parse)) });
       } catch (err) {
         errors.push({ line: number, message: err.message });

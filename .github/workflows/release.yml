@@ -1,4 +1,5 @@
-# Publishing a GitHub release submits that version to addons.mozilla.org.
+# Publishing a GitHub release submits that version to addons.mozilla.org;
+# pre-releases are skipped.
 # The tag must be v<version in manifest.json>. The release text becomes the
 # AMO release notes; store/reviewer-notes.txt goes to Mozilla's reviewers.
 # Needs the AMO_JWT_ISSUER and AMO_JWT_SECRET secrets (AMO API credentials).
@@ -14,6 +15,8 @@ permissions:
 
 jobs:
   amo:
+    # `published` fires for pre-releases too; those aren't for every user.
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -75,6 +75,9 @@
 
   function onKeydown(event) {
     if (!event.isTrusted || !state.settings || event.isComposing) return;
+    // A fresh press starts over. The keyup that would have cleared an entry
+    // can land in another tab when the command switched tabs.
+    followups.delete(event.code);
     let key = keys.fromEvent(event);
     if (!key) return;
     if (key === '<c-[>') key = '<esc>';

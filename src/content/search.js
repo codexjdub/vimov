@@ -45,7 +45,7 @@ Vimov.search = (() => {
   function row(result, words) {
     const item = el('li', 'result');
     item.setAttribute('role', 'option');
-    const title = result.title || result.url;
+    const title = result.title || result.url || 'Untitled';
     let detail = [result.folder, result.url && shortUrl(result.url)].filter(Boolean).join(' · ');
     if (result.type === 'web') detail = `Search with ${result.engine}`;
     else if (result.type === 'url') detail = 'Go to this address';

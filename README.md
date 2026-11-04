@@ -106,7 +106,8 @@ The workflow checks the tag matches the manifest, lints, submits with
 `web-ext sign` (reviewer notes come from `store/reviewer-notes.txt`) and
 attaches the zip to the release. Mozilla reviews each version before it
 reaches users. It needs the `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` repository
-secrets, from AMO's API key page.
+secrets, from AMO's API key page. Pre-releases are skipped, so nothing
+reaches AMO until the release is marked as a full release.
 
 ## Limits
 

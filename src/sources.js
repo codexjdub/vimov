@@ -53,7 +53,7 @@ const Sources = (() => {
             } else {
               const count = (child.children || []).filter((c) => c.url && OPENABLE.test(c.url)).length;
               items.push({ type: 'folder', id: child.id, title: child.title || '', folder, count, dateAdded: child.dateAdded });
-              walk(child, [...path, child.title]);
+              walk(child, [...path, child.title || 'Untitled']);
             }
           }
         };
@@ -169,8 +169,10 @@ const Sources = (() => {
   // 'bookmarks', 'history' or 'web'; a symbol in the text overrides it.
   async function search(query = '', { source = 'all', tab } = {}) {
     const raw = String(query).trim().split(/\s+/).filter(Boolean);
-    for (const word of raw) if (SYMBOLS[word]) source = SYMBOLS[word];
-    const typed = raw.filter((word) => !SYMBOLS[word]);
+    // Own properties only, so words like "constructor" stay search words.
+    const symbol = (word) => (Object.hasOwn(SYMBOLS, word) ? SYMBOLS[word] : null);
+    for (const word of raw) source = symbol(word) || source;
+    const typed = raw.filter((word) => !symbol(word));
     const wants = (s) => source === 'all' || source === s;
 
     const engines = wants('web') ? await browser.search.get() : [];
@@ -210,10 +212,11 @@ const Sources = (() => {
     ].slice(0, MAX_RESULTS);
   }
 
-  // Opens a result from search(), from the tab `tab`.
-  async function open(result, { newTab = false, tab }) {
+  // Opens a result from search(), from the tab `tab`. `background` keeps new
+  // tabs from taking focus.
+  async function open(result, { newTab = false, background = false, tab }) {
     const create = (url, i = 0) =>
-      browser.tabs.create({ url, active: i === 0, index: tab.index + 1 + i, openerTabId: tab.id });
+      browser.tabs.create({ url, active: !background && i === 0, index: tab.index + 1 + i, openerTabId: tab.id });
     switch (result.type) {
       case 'tab':
         await browser.tabs.update(result.id, { active: true });

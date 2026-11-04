@@ -75,5 +75,11 @@ browser.omnibox.onInputChanged.addListener(async (text, suggest) => {
 browser.omnibox.onInputEntered.addListener(async (text, disposition) => {
   const tab = await activeTab();
   const result = suggested.get(text) || (await Sources.search(text, { tab }))[0];
-  if (result) await Sources.open(result, { newTab: disposition !== 'currentTab', tab });
+  if (result) {
+    await Sources.open(result, {
+      newTab: disposition !== 'currentTab',
+      background: disposition === 'newBackgroundTab',
+      tab,
+    });
+  }
 });

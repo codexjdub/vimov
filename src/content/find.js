@@ -5,7 +5,7 @@
 // query has a capital letter) and treats any run of spaces as any whitespace.
 
 Vimov.find = (() => {
-  const { ui } = Vimov;
+  const { dom, ui } = Vimov;
   const SKIP = new Set(['script', 'style', 'noscript', 'template', 'textarea', 'select', 'option', 'datalist']);
   const MAX_MATCHES = 2000;
   // The CSS Custom Highlight API paints matches without touching the DOM.
@@ -105,10 +105,33 @@ Vimov.find = (() => {
     return had;
   }
 
+  const VIEWPORT = () => ({ top: 0, left: 0, bottom: innerHeight, right: innerWidth });
+  const within = (r, box) => r.top >= box.top && r.bottom <= box.bottom && r.left >= box.left && r.right <= box.right;
+  const scrolls = (el) =>
+    (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) &&
+    /(auto|scroll|overlay)/.test(getComputedStyle(el).overflow);
+
+  // Scrolls the match into view. Centring its element is enough unless the
+  // element is taller than the view (a long <pre>, a plain-text file): then
+  // each scrolling box around the match, innermost first, is moved to centre
+  // the match itself.
   function reveal(range) {
-    const r = range.getBoundingClientRect();
-    if (r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth) return;
-    range.startContainer.parentElement?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+    if (within(range.getBoundingClientRect(), VIEWPORT())) return;
+    const parent = range.startContainer.parentElement;
+    parent?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+    const page = document.scrollingElement || document.documentElement;
+    for (let el = parent; el; el = dom.flatParent(el)) {
+      if (el !== page && !scrolls(el)) continue;
+      const box = el === page ? VIEWPORT() : el.getBoundingClientRect();
+      const r = range.getBoundingClientRect();
+      if (within(r, box)) continue;
+      const centre = (a1, a2, b1, b2) => (a1 < b1 || a2 > b2 ? (a1 + a2 - b1 - b2) / 2 : 0);
+      el.scrollBy({
+        top: centre(r.top, r.bottom, box.top, box.bottom),
+        left: centre(r.left, r.right, box.left, box.right),
+        behavior: 'instant',
+      });
+    }
   }
 
   // Selects the match. A match inside a link also focuses the link, so Enter
