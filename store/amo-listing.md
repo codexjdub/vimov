@@ -103,6 +103,12 @@ Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.4.1)
+
+```
+Next and previous page move from ]] and [[ to } and {, so the [ and ] keys of video speed extensions work again. To use ]] and [[ as in Vimium, add "map ]] nextPage" and "map [[ previousPage" on the options page.
+```
+
 ## Version notes (0.4.0)
 
 ```
