@@ -4,6 +4,7 @@
 export default {
   ignoreFiles: [
     '.claude',
+    '.github',
     'dev',
     'store',
     'web-ext-config.mjs',

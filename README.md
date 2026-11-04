@@ -91,6 +91,21 @@ mail.google.com
   harness: `node dev/serve.mjs`, then open
   `http://127.0.0.1:8765/dev/playground.html?harness`.
 
+## Releasing
+
+Publishing a GitHub release submits that version to addons.mozilla.org
+(`.github/workflows/release.yml`):
+
+1. Bump `version` in `manifest.json`, commit and push.
+2. `gh release create v<version> --title "Vimov <version>" --notes "…"`. The
+   notes become AMO's release notes, so write them as plain text.
+
+The workflow checks the tag matches the manifest, lints, submits with
+`web-ext sign` (reviewer notes come from `store/reviewer-notes.txt`) and
+attaches the zip to the release. Mozilla reviews each version before it
+reaches users. It needs the `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` repository
+secrets, from AMO's API key page.
+
 ## Limits
 
 Firefox doesn't run extensions on `about:` pages, `addons.mozilla.org`, the

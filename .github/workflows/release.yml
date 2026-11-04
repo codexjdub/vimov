@@ -1,0 +1,63 @@
+# Publishing a GitHub release submits that version to addons.mozilla.org.
+# The tag must be v<version in manifest.json>. The release text becomes the
+# AMO release notes; store/reviewer-notes.txt goes to Mozilla's reviewers.
+# Needs the AMO_JWT_ISSUER and AMO_JWT_SECRET secrets (AMO API credentials).
+
+name: Release to AMO
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write # to attach the package to the release
+
+jobs:
+  amo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check the tag matches manifest.json
+        run: |
+          version=$(node -p "require('./manifest.json').version")
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match manifest.json version $version; expected v$version"
+            exit 1
+          fi
+
+      - name: Lint
+        run: npx --yes web-ext@8 lint
+
+      # The release text arrives through the environment, never pasted into
+      # the script, so nothing in it can run as a command.
+      - name: Write AMO metadata
+        env:
+          RELEASE_NOTES: ${{ github.event.release.body }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const version = { approval_notes: fs.readFileSync("store/reviewer-notes.txt", "utf8").trim() };
+            const notes = (process.env.RELEASE_NOTES || "").trim();
+            if (notes) version.release_notes = { "en-US": notes };
+            fs.writeFileSync(`${process.env.RUNNER_TEMP}/amo-metadata.json`, JSON.stringify({ version }, null, 2));
+          '
+
+      # Doesn't wait for Mozilla's review, which can take days: the version
+      # joins the review queue and AMO emails when it's approved.
+      - name: Submit to AMO
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: npx --yes web-ext@8 sign --channel=listed --amo-metadata="$RUNNER_TEMP/amo-metadata.json" --approval-timeout=0
+
+      - name: Attach the package to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          npx --yes web-ext@8 build --overwrite-dest
+          gh release upload "$GITHUB_REF_NAME" web-ext-artifacts/*.zip --clobber

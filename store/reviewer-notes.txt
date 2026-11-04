@@ -1,0 +1,13 @@
+No build step: the package contains the source exactly as in the repository (https://github.com/codexjdub/vimov), with no minified or generated code, no remote code and no network requests.
+
+Permissions:
+- Content scripts on all URLs: Vimov handles keyboard commands on every page.
+- storage: the user's key mappings and settings.
+- sessions: "reopen closed tab" (X).
+- clipboardWrite: copying the page URL (yy) and link URLs (yf) from the background page when the page itself can't write to the clipboard.
+- tabs, bookmarks, history: the Search bar (o) and the "v" address-bar keyword search the titles and URLs of open tabs, bookmarks and history entries, so the user can switch to or open them. Bookmarks are only read, never changed. Shift+Delete on a history result deletes that entry, only when the user asks.
+- search: web searches from the Search bar use the user's own search engines through search.search().
+
+Search results are matched in the background page (src/sources.js) and drawn in a closed shadow root on the page; nothing is stored or sent anywhere.
+
+To try it, load the add-on, open any page and press ? for the list of keys, f for link hints or o to search.
