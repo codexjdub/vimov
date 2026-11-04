@@ -42,8 +42,9 @@ glides smoothly rather than jumping (unless smooth scrolling is off). Esc
 leaves a text field, closes hints or find, and clears find highlights.
 
 `}` looks for a link marked `rel="next"`, then one whose text starts with
-"Next" or "Newer", or ends in an arrow such as `›` or `»`; `{` does the same
-for "Prev", "Previous" and "Older". Vimium and Tridactyl use `]]` and `[[`;
+"Next" or "Newer" (or 下一页 and 下一章 in Chinese), or ends in an arrow such
+as `›` or `»`; `{` does the same for "Prev", "Previous" and "Older" (上一页,
+上一章). Vimium and Tridactyl use `]]` and `[[`;
 Vimov leaves `[` and `]` alone because video speed extensions use them. To
 have them anyway, add `map ]] nextPage` and `map [[ previousPage`.
 

@@ -10,10 +10,21 @@ Vimov.pages = (() => {
   // first: rel="next", then a word at the start of its text, then an arrow on
   // its own or at the end (the start, for previous). Newer counts as next and
   // older as previous, as in Vimium and Tridactyl.
+  //
+  // In Chinese, simplified and traditional: 下一页 (next page), then the next
+  // chapter (章), episode (话), section (节), article (篇), image (张) or
+  // message (封), with 上 for previous. Only those characters count, so 下载
+  // (download) and 首页 (home) don't.
   const REL = { next: ['next'], previous: ['prev', 'previous'] };
   const PATTERNS = {
-    next: [/^next\b/i, /^newer\b/i, /^(?:>|›|→|»|≫|>>)$/, /(?:>|›|→|»|≫)$/, /^more$/i],
-    previous: [/^prev(?:ious)?\b/i, /^older\b/i, /^(?:<|‹|←|«|≪|<<)$/, /^(?:<|‹|←|«|≪)/],
+    next: [
+      /^next\b/i, /^newer\b/i, /^(?:下一?|后一|後一)[页頁]/, /^下一?[章话話节節篇张張封]/,
+      /^(?:>|›|→|»|≫|>>)$/, /(?:>|›|→|»|≫)$/, /^more$/i,
+    ],
+    previous: [
+      /^prev(?:ious)?\b/i, /^older\b/i, /^(?:上一?|前一)[页頁]/, /^上一?[章话話节節篇张張封]/,
+      /^(?:<|‹|←|«|≪|<<)$/, /^(?:<|‹|←|«|≪)/,
+    ],
   };
   // Longer text is more often a headline that happens to start with "Next".
   const MAX_LABEL = 30;

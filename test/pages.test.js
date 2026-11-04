@@ -36,3 +36,15 @@ test('headlines and "read more" links aren\'t pages', () => {
   assert.strictEqual(pick(links, 'previous'), -1);
   assert.strictEqual(pick([...links, link('More')], 'next'), 4);
 });
+
+test('Chinese next and previous links, the page before the chapter', () => {
+  const links = [link('首页'), link('上一章'), link('上一页'), link('下一页'), link('下一章'), link('尾页')];
+  assert.strictEqual(pick(links, 'next'), 3);
+  assert.strictEqual(pick(links, 'previous'), 2);
+  assert.strictEqual(pick([link('上一章'), link('下一章')], 'next'), 1);
+  assert.strictEqual(pick([link('下一頁'), link('上一頁')], 'previous'), 1);
+  assert.strictEqual(pick([link('后一页')], 'next'), 0);
+  assert.strictEqual(pick([link('上一篇：标题')], 'previous'), 0);
+  assert.strictEqual(pick([link('下一話')], 'next'), 0);
+  assert.strictEqual(pick([link('下载'), link('首页'), link('上传'), link('阅览下一章节')], 'next'), -1);
+});
