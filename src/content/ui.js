@@ -204,6 +204,14 @@ Vimov.ui = (() => {
     }
   `;
 
+  // An element with an optional class and text, for building the overlays.
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
+  }
+
   let host = null;
   let root = null;
   let hud = null;
@@ -245,6 +253,7 @@ Vimov.ui = (() => {
   }
 
   return {
+    el,
     root: getRoot,
 
     // The persistent HUD text: the current mode or the keys typed so far.

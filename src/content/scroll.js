@@ -80,10 +80,48 @@ Vimov.scroll = (() => {
     el.scrollTo({ [AXES[axis].edge]: end ? el[AXES[axis].size] : 0, behavior: behavior(smooth) });
   }
 
+  // Gliding: while a scroll key is held, scroll at a steady speed instead of
+  // jumping on each key repeat. It stops when that key comes up or the page
+  // loses focus. This keyup listener is added before main.js's, which hides
+  // keyups from listeners after it.
+  let glide = null; // { code, frame }
+
+  function stopGlide() {
+    if (!glide) return;
+    cancelAnimationFrame(glide.frame);
+    glide = null;
+  }
+  addEventListener('keyup', (e) => {
+    if (glide?.code === e.code) stopGlide();
+  }, true);
+  addEventListener('blur', stopGlide);
+
+  // Scrolls at `speed` pixels a second in `dir` until the key with this
+  // event.code is released. Repeats of the same key leave the glide going.
+  function startGlide(axis, dir, speed, code) {
+    if (glide?.code === code) return;
+    stopGlide();
+    const el = target(axis, dir);
+    let last = null;
+    let carry = 0; // distance owed, kept until it adds up to a whole pixel
+    const tick = (now) => {
+      const ms = last === null ? 16 : Math.min(now - last, 50);
+      last = now;
+      carry += (dir * speed * ms) / 1000;
+      const px = Math.trunc(carry);
+      if (px) {
+        el.scrollBy({ [AXES[axis].edge]: px, behavior: 'instant' });
+        carry -= px;
+      }
+      glide.frame = requestAnimationFrame(tick);
+    };
+    glide = { code, frame: requestAnimationFrame(tick) };
+  }
+
   // Makes later scrolling start from el, as if the user had clicked it.
   function setTarget(el) {
     lastClicked = el;
   }
 
-  return { by, to, setTarget };
+  return { by, to, glide: startGlide, stopGlide, setTarget };
 })();

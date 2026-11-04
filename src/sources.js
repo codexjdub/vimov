@@ -175,18 +175,22 @@ const Sources = (() => {
     const typed = raw.filter((word) => !symbol(word));
     const wants = (s) => source === 'all' || source === s;
 
-    const engines = wants('web') ? await browser.search.get() : [];
-    const keyword = typed.length > 1 ? engineFor(typed[0], engines) : null;
-    if (keyword) return [webSearch(keyword, typed.slice(1).join(' '))];
     if (!typed.length) return (await recent(source, tab)).slice(0, MAX_RESULTS);
 
-    const words = terms(typed.map((w) => w.toLowerCase()));
+    // Every source at once, so a keystroke waits for the slowest lookup
+    // rather than all of them in turn.
     const longest = typed.reduce((a, b) => (b.length > a.length ? b : a));
-    const items = [
-      ...(wants('tabs') ? await openTabs(tab) : []),
-      ...(wants('bookmarks') ? await allBookmarks() : []),
-      ...(wants('history') ? await visited(longest, 500) : []),
-    ];
+    const [engines, tabs, bookmarks, history] = await Promise.all([
+      wants('web') ? browser.search.get() : [],
+      wants('tabs') ? openTabs(tab) : [],
+      wants('bookmarks') ? allBookmarks() : [],
+      wants('history') ? visited(longest, 500) : [],
+    ]);
+    const keyword = typed.length > 1 ? engineFor(typed[0], engines) : null;
+    if (keyword) return [webSearch(keyword, typed.slice(1).join(' '))];
+
+    const words = terms(typed.map((w) => w.toLowerCase()));
+    const items = [...tabs, ...bookmarks, ...history];
 
     // A page that's open, or bookmarked, is listed once: as the tab, then as
     // the bookmark. Items come in that order.

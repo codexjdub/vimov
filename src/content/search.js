@@ -6,22 +6,10 @@
 
 Vimov.search = (() => {
   const { ui } = Vimov;
+  const { el } = ui;
   const TAGS = { tab: 'Tab', bookmark: 'Bookmark', folder: 'Folder', history: 'History', web: 'Search', url: 'Open' };
-  const PLACEHOLDERS = {
-    all: 'Search tabs, bookmarks, history or the web',
-    tabs: 'Search open tabs',
-    bookmarks: 'Search bookmarks',
-    history: 'Search history',
-  };
   const SYMBOLS = new Set(['*', '%', '^', '?']);
   const CONFIRM_TABS = 10; // a folder with more bookmarks than this asks first
-
-  function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text) node.textContent = text;
-    return node;
-  }
 
   // `text` with the typed words in bold.
   function marked(text, words) {
@@ -79,7 +67,7 @@ Vimov.search = (() => {
     const input = el('input');
     input.spellcheck = false;
     input.autocomplete = 'off';
-    input.placeholder = PLACEHOLDERS[source] || PLACEHOLDERS.all;
+    input.placeholder = Vimov.SEARCH_SOURCES[source] || Vimov.SEARCH_SOURCES.all;
     input.setAttribute('aria-label', input.placeholder);
     const list = el('ol', 'results');
     list.setAttribute('role', 'listbox');

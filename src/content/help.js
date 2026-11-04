@@ -5,13 +5,7 @@
 
 Vimov.help = (() => {
   const { ui } = Vimov;
-
-  function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text) node.textContent = text;
-    return node;
-  }
+  const { el } = ui;
 
   // [{ category, rows: [{ command, description, keys }] }], with rows in
   // command-registry order and bindings that do the same thing merged.

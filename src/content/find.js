@@ -1,8 +1,9 @@
 'use strict';
 
 // Find mode: search as you type with every match highlighted, then n and N to
-// step between matches (Ctrl+J and Ctrl+K while still typing). Matching is smartcase (case-sensitive only when the
-// query has a capital letter) and treats any run of spaces as any whitespace.
+// step between matches (Ctrl+J and Ctrl+K while still typing). Matching is
+// smartcase (case-sensitive only when the query has a capital letter) and
+// treats any run of spaces as any whitespace.
 
 Vimov.find = (() => {
   const { dom, ui } = Vimov;
@@ -268,12 +269,35 @@ Vimov.find = (() => {
     }
   }
 
+  // The matches for the last search, kept for n and N until the page changes,
+  // so stepping through them doesn't read the whole page on every press.
+  let cached = null; // { query, matches }
+  const changes = new MutationObserver(() => forget());
+  function forget() {
+    cached = null;
+    changes.disconnect();
+  }
+  function matchesFor(query) {
+    if (cached?.query !== query) {
+      forget();
+      cached = { query, matches: search(query) };
+      // New or changed text, or something shown or hidden, makes them stale.
+      changes.observe(document, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+        attributeFilter: ['class', 'style', 'hidden'],
+      });
+    }
+    return cached.matches;
+  }
+
   function next(dir, count = 1) {
     if (!lastQuery) {
       ui.message('No previous search');
       return;
     }
-    const matches = search(lastQuery);
+    const matches = matchesFor(lastQuery);
     if (!matches.length) {
       clear();
       ui.message(`Not found: ${lastQuery}`);

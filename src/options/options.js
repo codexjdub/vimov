@@ -126,9 +126,18 @@ addEventListener('beforeunload', (e) => {
   if (JSON.stringify(read()) !== saved) e.preventDefault();
 });
 
+function load() {
+  return browser.storage.sync.get(Vimov.DEFAULT_SETTINGS).then((settings) => {
+    fill(settings);
+    saved = JSON.stringify(read());
+    refresh();
+  });
+}
+
 buildReference();
-browser.storage.sync.get(Vimov.DEFAULT_SETTINGS).then((settings) => {
-  fill(settings);
-  saved = JSON.stringify(read());
-  refresh();
+load();
+// Settings changed elsewhere, by the toolbar button or another options tab.
+// Show them, unless there are unsaved edits here.
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && JSON.stringify(read()) === saved) load();
 });

@@ -34,8 +34,9 @@ keeps development files out of it. The listing text lives in
 | `H` `L`, `r`, `gu` `gU`, `yy` | Back and forward, reload, up the URL, copy the URL |
 | `i`, `gi` | Pass keys to the page until Esc; focus a text field |
 
-A count repeats or scales a command: `5j`, `3K`. Esc leaves a text field,
-closes hints or find, and clears find highlights.
+A count repeats or scales a command: `5j`, `3K`. Holding `j`, `k`, `h` or `l`
+glides smoothly rather than jumping (unless smooth scrolling is off). Esc
+leaves a text field, closes hints or find, and clears find highlights.
 
 ## Search
 
@@ -78,15 +79,23 @@ mail.google.com
 *.youtube.com f j k l
 ```
 
+The toolbar button does this for the site you're on: click it to turn Vimov
+off there (it adds the site to excluded sites, and the button shows "off"),
+click again to turn it back on. If a pattern of your own covers the site, the
+button opens the options page instead of changing it.
+
 ## Development
 
 - `src/content/` runs in every page; `main.js` routes keys to the active mode
   or the keymap, and `actions.js` holds the command implementations.
 - `src/shared/` is used by both the content script and the options page: the
   command registry, default keymap and key-notation parser.
-- `src/background.js` does the tab work a content script can't, and
-  `src/sources.js` finds and ranks results for the Search bar and the
-  address-bar keyword.
+- `src/background.js` does the tab work a content script can't, the
+  address-bar keyword and the toolbar button; `src/sources.js` finds and ranks
+  results for the Search bar and the keyword.
+- `test/` has Node tests that load the scripts with stand-in browser APIs:
+  `npm install` once, then `npm test`. `npm run lint`, `npm run build` and
+  `npm start` (Firefox with Vimov loaded) run the pinned web-ext.
 - `dev/playground.html` is a page of tricky cases (hidden and covered links,
   shadow DOM, inner scrollers, text split across elements). Open it in Firefox
   with Vimov loaded, or run the content scripts in any browser through the
@@ -102,12 +111,14 @@ Publishing a GitHub release submits that version to addons.mozilla.org
 2. `gh release create v<version> --title "Vimov <version>" --notes "…"`. The
    notes become AMO's release notes, so write them as plain text.
 
-The workflow checks the tag matches the manifest, lints, submits with
-`web-ext sign` (reviewer notes come from `store/reviewer-notes.txt`) and
+The workflow checks the tag matches the manifest, runs the tests and lint,
+submits with `web-ext sign` (reviewer notes come from `store/reviewer-notes.txt`) and
 attaches the zip to the release. Mozilla reviews each version before it
 reaches users. It needs the `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` repository
 secrets, from AMO's API key page. Pre-releases are skipped, so nothing
-reaches AMO until the release is marked as a full release.
+reaches AMO until the release is marked as a full release. Everything the
+workflow runs is pinned (actions by commit, web-ext by `package-lock.json`),
+since those steps hold the AMO keys.
 
 ## Limits
 

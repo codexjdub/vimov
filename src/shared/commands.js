@@ -92,6 +92,7 @@ globalThis.Vimov = globalThis.Vimov || {};
   };
 
   Vimov.COMMANDS = COMMANDS;
+  Vimov.SEARCH_SOURCES = SEARCH_SOURCES;
   Vimov.CATEGORIES = ['Scrolling', 'Page', 'Links', 'Find', 'Search', 'Tabs', 'Other'];
 
   Vimov.describeCommand = (name, options = {}) => {

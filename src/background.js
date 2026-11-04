@@ -1,8 +1,9 @@
 'use strict';
 
 // Background event page: tab and browser operations a content script can't do
-// itself, and the address-bar keyword. Messages are { cmd, ...args } and
-// resolve to { ok, result } or { error }. Searching lives in sources.js.
+// itself, the address-bar keyword, and the toolbar button. Messages are
+// { cmd, ...args } and resolve to { ok, result } or { error }. Searching lives
+// in sources.js.
 
 const handlers = {
   nextTab: ({ count }, tab) => selectRelative(tab, count),
@@ -43,7 +44,7 @@ async function selectRelative(tab, delta) {
 }
 
 browser.runtime.onMessage.addListener((message, sender) => {
-  const handler = handlers[message?.cmd];
+  const handler = Object.hasOwn(handlers, message?.cmd) ? handlers[message.cmd] : null;
   if (!handler || !sender.tab) return undefined;
   return Promise.resolve()
     .then(() => handler({ count: 1, ...message }, sender.tab))
@@ -57,6 +58,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
 // bar. Firefox shows suggestions as plain text.
 const TAGS = { tab: 'Tab', bookmark: 'Bookmark', history: 'History' };
 let suggested = new Map(); // suggestion content (its URL) → result
+let typedCount = 0; // input changes so far, to spot answers that arrive late
 
 const describe = (r) => (r.type === 'url' ? `Open ${r.url}` : `${TAGS[r.type]}: ${r.title || r.url} — ${r.url}`);
 
@@ -65,7 +67,11 @@ const activeTab = async () => (await browser.tabs.query({ active: true, currentW
 browser.omnibox.setDefaultSuggestion({ description: 'Vimov: search tabs, bookmarks and history' });
 
 browser.omnibox.onInputChanged.addListener(async (text, suggest) => {
+  const id = ++typedCount;
   const results = (await Sources.search(text, { tab: await activeTab() })).filter((r) => r.url);
+  // A search for earlier text that finishes after a later one would replace
+  // the suggestions on screen with stale ones.
+  if (id !== typedCount) return;
   suggested = new Map(results.map((r) => [r.url, r]));
   suggest(results.map((r) => ({ content: r.url, description: describe(r) })));
 });
@@ -83,3 +89,63 @@ browser.omnibox.onInputEntered.addListener(async (text, disposition) => {
     });
   }
 });
+
+// The toolbar button turns Vimov off or on for the current site, by adding
+// or removing the site's host in the excluded sites. A site excluded by a
+// pattern of your own, or with keys passed through, opens the options page
+// instead, so the button never edits a line you wrote.
+const exclusionsText = async () => (await browser.storage.sync.get({ exclusions: '' })).exclusions;
+
+function buttonState(text, url) {
+  const site = Vimov.keys.siteExclusion(text, url || '');
+  if (!site) return { enabled: false, badge: '', title: 'Vimov doesn’t run on this page' };
+  const { host, rule, own } = site;
+  if (!rule) return { enabled: true, badge: '', title: `Vimov is on. Click to turn it off for ${host}` };
+  if (own) return { enabled: true, badge: 'off', title: `Vimov is off for ${host}. Click to turn it back on` };
+  const pattern = `“${rule.pattern}” in excluded sites`;
+  if (rule.passKeys.size) {
+    const keys = [...rule.passKeys].join(' ');
+    return { enabled: true, badge: '', title: `Vimov passes ${keys} to this page (${pattern}). Click to change it` };
+  }
+  return { enabled: true, badge: 'off', title: `Vimov is off here (${pattern}). Click to change it` };
+}
+
+async function showButton(tabId, url) {
+  const state = buttonState(await exclusionsText(), url);
+  await Promise.all([
+    state.enabled ? browser.action.enable(tabId) : browser.action.disable(tabId),
+    browser.action.setBadgeText({ tabId, text: state.badge }),
+    browser.action.setTitle({ tabId, title: state.title }),
+  ]);
+}
+
+async function showButtonInActiveTabs() {
+  const tabs = await browser.tabs.query({ active: true });
+  await Promise.all(tabs.map((tab) => showButton(tab.id, tab.url)));
+}
+
+browser.action.setBadgeBackgroundColor({ color: '#6b7280' });
+browser.action.onClicked.addListener(async (tab) => {
+  const text = await exclusionsText();
+  const site = Vimov.keys.siteExclusion(text, tab.url || '');
+  if (!site) return;
+  if (site.rule && !site.own) {
+    await browser.runtime.openOptionsPage();
+    return;
+  }
+  // Content scripts and the badge follow from the storage change.
+  await browser.storage.sync.set({ exclusions: Vimov.keys.toggleSite(text, site.host) });
+});
+browser.tabs.onActivated.addListener(async ({ tabId }) => {
+  const tab = await browser.tabs.get(tabId);
+  await showButton(tab.id, tab.url);
+});
+browser.tabs.onUpdated.addListener(
+  (tabId, change, tab) => (tab.active ? showButton(tabId, tab.url) : undefined),
+  { properties: ['url', 'status'] },
+);
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes.exclusions) showButtonInActiveTabs();
+});
+browser.runtime.onStartup.addListener(showButtonInActiveTabs);
+browser.runtime.onInstalled.addListener(showButtonInActiveTabs);

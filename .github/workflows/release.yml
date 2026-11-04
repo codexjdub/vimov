@@ -3,6 +3,9 @@
 # The tag must be v<version in manifest.json>. The release text becomes the
 # AMO release notes; store/reviewer-notes.txt goes to Mozilla's reviewers.
 # Needs the AMO_JWT_ISSUER and AMO_JWT_SECRET secrets (AMO API credentials).
+#
+# Everything that runs here is pinned, because these steps hold the AMO keys:
+# actions by commit, and web-ext and its dependencies by package-lock.json.
 
 name: Release to AMO
 
@@ -19,11 +22,18 @@ jobs:
     if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
+
+      # Exactly the versions in package-lock.json. Install scripts don't run;
+      # web-ext doesn't need them.
+      - name: Install web-ext
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Check the tag matches manifest.json
         run: |
@@ -33,8 +43,11 @@ jobs:
             exit 1
           fi
 
+      - name: Test
+        run: npm test
+
       - name: Lint
-        run: npx --yes web-ext@8 lint
+        run: npm exec --no -- web-ext lint
 
       # The release text arrives through the environment, never pasted into
       # the script, so nothing in it can run as a command.
@@ -56,11 +69,11 @@ jobs:
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
-        run: npx --yes web-ext@8 sign --channel=listed --amo-metadata="$RUNNER_TEMP/amo-metadata.json" --approval-timeout=0
+        run: npm exec --no -- web-ext sign --channel=listed --amo-metadata="$RUNNER_TEMP/amo-metadata.json" --approval-timeout=0
 
       - name: Attach the package to the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          npx --yes web-ext@8 build --overwrite-dest
+          npm exec --no -- web-ext build --overwrite-dest
           gh release upload "$GITHUB_REF_NAME" web-ext-artifacts/*.zip --clobber

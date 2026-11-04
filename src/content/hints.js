@@ -73,30 +73,39 @@ Vimov.hints = (() => {
     return labels.slice(used, used + n);
   }
 
-  // Moves each marker right, past any earlier one it would cover, so every
-  // label can be read: a tiny vote arrow and the title next to it, or a link
-  // and a button inside it at the same corner. Earlier elements keep their
-  // spot. All boxes are measured before any marker moves.
-  function spreadOut(markers) {
-    const boxes = markers.map(({ node }) => {
-      const r = node.getBoundingClientRect();
-      return { node, left: r.left, top: r.top, width: r.width, height: r.height, moved: false };
-    });
-    const overlaps = (a, b) =>
-      a.left < b.left + b.width && a.left + a.width > b.left && a.top < b.top + b.height && a.top + a.height > b.top;
+  const overlaps = (a, b) =>
+    a.left < b.left + b.width && a.left + a.width > b.left && a.top < b.top + b.height && a.top + a.height > b.top;
+
+  // New left edges for boxes { left, top, width, height }: each box moves
+  // right, past any earlier one it would cover, so every label can be read
+  // (a tiny vote arrow and the title next to it, or a link and a button
+  // inside it at the same corner). Earlier boxes keep their spot.
+  function spread(boxes) {
     const placed = [];
-    for (const box of boxes) {
+    return boxes.map((box) => {
+      const moved = { ...box };
       for (let again = true; again; ) {
         again = false;
         for (const other of placed) {
-          if (!overlaps(box, other)) continue;
-          box.left = other.left + other.width + 1;
-          box.moved = again = true;
+          if (!overlaps(moved, other)) continue;
+          moved.left = other.left + other.width + 1;
+          again = true;
         }
       }
-      placed.push(box);
-    }
-    for (const box of boxes) if (box.moved) box.node.style.left = `${box.left}px`;
+      placed.push(moved);
+      return moved.left;
+    });
+  }
+
+  // Measures every marker, then moves the ones that would cover another.
+  function spreadOut(markers) {
+    const boxes = markers.map(({ node }) => {
+      const { left, top, width, height } = node.getBoundingClientRect();
+      return { left, top, width, height };
+    });
+    spread(boxes).forEach((left, i) => {
+      if (left !== boxes[i].left) markers[i].node.style.left = `${left}px`;
+    });
   }
 
   function activate({ el, rect }, action) {
@@ -212,5 +221,5 @@ Vimov.hints = (() => {
     Vimov.mode.enter(mode);
   }
 
-  return { start, makeLabels };
+  return { start, makeLabels, spread };
 })();

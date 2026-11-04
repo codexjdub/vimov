@@ -232,5 +232,36 @@ Vimov.keys = (() => {
 
   const matchExclusion = (rules, url) => rules.find((rule) => rule.re.test(url)) || null;
 
-  return { fromEvent, parse, buildKeymap, parseExclusions, matchExclusion, escapeRegExp };
+  // For the toolbar button: the host of a web page and the exclusion rule
+  // that applies to it, or null for pages Vimov doesn't run on. `own` is true
+  // when that rule is the host alone on its line, as the button writes it.
+  function siteExclusion(text, url) {
+    let parsed;
+    try {
+      parsed = new URL(url);
+    } catch {
+      return null;
+    }
+    if (!/^https?:$/.test(parsed.protocol)) return null;
+    const host = parsed.host;
+    const rule = matchExclusion(parseExclusions(text).rules, url);
+    const own = !!rule && rule.pattern.toLowerCase() === host && !rule.passKeys.size;
+    return { host, rule, own };
+  }
+
+  // The exclusions text with `host` alone on a line added, or, if it's
+  // already there, removed. Other lines are kept as they are.
+  function toggleSite(text, host) {
+    const lines = String(text).split('\n');
+    const isHost = (line) => {
+      const [pattern, ...pass] = line.trim().split(/\s+/);
+      return pattern.toLowerCase() === host && !pass.length;
+    };
+    const kept = lines.filter((line) => !isHost(line));
+    if (kept.length < lines.length) return kept.join('\n');
+    while (kept.length && !kept.at(-1).trim()) kept.pop();
+    return [...kept, host].join('\n');
+  }
+
+  return { fromEvent, parse, buildKeymap, parseExclusions, matchExclusion, siteExclusion, toggleSite, escapeRegExp };
 })();

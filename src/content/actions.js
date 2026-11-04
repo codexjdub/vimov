@@ -6,10 +6,21 @@
 Vimov.actions = (() => {
   const { dom, ui, scroll } = Vimov;
   const settings = () => Vimov.state.settings;
-  // Smooth scrolling animates a single press; held-down keys scroll instantly
-  // so the repeats don't keep restarting the animation.
+  // Smooth scrolling animates a single press. A held j, k, h or l then glides
+  // at this many steps a second; other held keys, and every key with smooth
+  // scrolling off, jump on each repeat.
+  const GLIDE_STEPS_PER_SECOND = 15;
   const smooth = (event) => settings().smoothScroll && !event?.repeat;
   const step = (n) => settings().scrollStep * n;
+
+  // scrollDown and the like: a step per press (times the count), or a glide
+  // while the key is held.
+  const line = (axis, dir) => (n, _, e) => {
+    if (e?.repeat && settings().smoothScroll) {
+      return scroll.glide(axis, dir, step(GLIDE_STEPS_PER_SECOND), e.code);
+    }
+    return scroll.by(axis, { px: dir * step(n) }, smooth(e));
+  };
   const tabCommand = (cmd) => (count) => Vimov.bg(cmd, { count });
 
   // The URL n levels up the path, without query or fragment.
@@ -28,10 +39,10 @@ Vimov.actions = (() => {
   }
 
   return {
-    scrollDown: (n, _, e) => scroll.by('y', { px: step(n) }, smooth(e)),
-    scrollUp: (n, _, e) => scroll.by('y', { px: -step(n) }, smooth(e)),
-    scrollLeft: (n, _, e) => scroll.by('x', { px: -step(n) }, smooth(e)),
-    scrollRight: (n, _, e) => scroll.by('x', { px: step(n) }, smooth(e)),
+    scrollDown: line('y', 1),
+    scrollUp: line('y', -1),
+    scrollLeft: line('x', -1),
+    scrollRight: line('x', 1),
     scrollHalfDown: (n, _, e) => scroll.by('y', { pages: n / 2 }, smooth(e)),
     scrollHalfUp: (n, _, e) => scroll.by('y', { pages: -n / 2 }, smooth(e)),
     scrollPageDown: (n, _, e) => scroll.by('y', { pages: n }, smooth(e)),
