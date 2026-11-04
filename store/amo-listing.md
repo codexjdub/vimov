@@ -100,6 +100,12 @@ Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.2.2)
+
+```
+Link hints no longer cover each other: a hint that would hide another moves beside it. Fixes: a key that switched tabs could swallow the next press of that key on the page you left; searching for words like "constructor" found nothing; find now scrolls to matches deep in long plain-text pages; bookmark folders without a name no longer break the Search bar; address-bar results opened in a background tab stay in the background; excluding a site no longer also excludes addresses that merely start the same way.
+```
+
 ## Version notes (0.2.1)
 
 ```
