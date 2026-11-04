@@ -73,6 +73,32 @@ Vimov.hints = (() => {
     return labels.slice(used, used + n);
   }
 
+  // Moves each marker right, past any earlier one it would cover, so every
+  // label can be read: a tiny vote arrow and the title next to it, or a link
+  // and a button inside it at the same corner. Earlier elements keep their
+  // spot. All boxes are measured before any marker moves.
+  function spreadOut(markers) {
+    const boxes = markers.map(({ node }) => {
+      const r = node.getBoundingClientRect();
+      return { node, left: r.left, top: r.top, width: r.width, height: r.height, moved: false };
+    });
+    const overlaps = (a, b) =>
+      a.left < b.left + b.width && a.left + a.width > b.left && a.top < b.top + b.height && a.top + a.height > b.top;
+    const placed = [];
+    for (const box of boxes) {
+      for (let again = true; again; ) {
+        again = false;
+        for (const other of placed) {
+          if (!overlaps(box, other)) continue;
+          box.left = other.left + other.width + 1;
+          box.moved = again = true;
+        }
+      }
+      placed.push(box);
+    }
+    for (const box of boxes) if (box.moved) box.node.style.left = `${box.left}px`;
+  }
+
   function activate({ el, rect }, action) {
     ui.flash(rect);
     Vimov.scroll.setTarget(el);
@@ -130,6 +156,7 @@ Vimov.hints = (() => {
       return { ...target, label: labels[i], node };
     });
     ui.root().append(layer);
+    spreadOut(markers);
 
     let typed = '';
 
