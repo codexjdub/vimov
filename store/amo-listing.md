@@ -103,6 +103,12 @@ Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.4.2)
+
+```
+} and { now follow next and previous links on Chinese sites: 下一页 and 上一页, and the next or previous chapter, episode or article (下一章, 下一话, 下一篇), in simplified and traditional Chinese.
+```
+
 ## Version notes (0.4.1)
 
 ```
