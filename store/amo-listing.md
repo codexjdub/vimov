@@ -43,7 +43,7 @@ Vimov lets you browse without reaching for the mouse, using keys borrowed from V
 <b>Find on the page</b>
 <ul>
 <li>/ searches as you type and highlights every match, with a running count</li>
-<li>n and N jump between matches; landing on a link lets you press Enter to follow it</li>
+<li>n and N jump between matches, or Ctrl+J and Ctrl+K while you type; landing on a link lets you press Enter to follow it</li>
 <li>Case-insensitive unless you type a capital letter</li>
 </ul>
 
@@ -51,7 +51,7 @@ Vimov lets you browse without reaching for the mouse, using keys borrowed from V
 <ul>
 <li>o searches open tabs, bookmarks, history and the web together; b searches bookmarks, T open tabs</li>
 <li>Type * for bookmarks, % for tabs, ^ for history or ? for the web, just like Firefox's address bar</li>
-<li>Enter switches to a tab, opens a page or a whole bookmark folder; Shift+Enter opens it in a new tab</li>
+<li>Ctrl+J and Ctrl+K move through the results; Enter switches to a tab, opens a page or a whole bookmark folder; Shift+Enter opens it in a new tab</li>
 <li>Your search engine keywords work too: @wikipedia vim</li>
 <li>Type v and a space in the address bar for the same search on the new-tab page</li>
 </ul>
@@ -99,6 +99,12 @@ Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF 
 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
+
+## Version notes (0.2.1)
+
+```
+Ctrl+J and Ctrl+K move through results in the Search bar, and step through matches while you type in the find bar. Esc after a search now clears the last match too, so nothing stays highlighted.
+```
 
 ## Version notes (0.2.0)
 

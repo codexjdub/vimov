@@ -27,7 +27,7 @@ keeps development files out of it. The listing text lives in
 | --- | --- |
 | `j` `k` `h` `l`, `d` `u`, `gg` `G` | Scroll; half page; top and bottom |
 | `f`, `F`, `yf` | Link hints: click, open in a new tab, copy the URL |
-| `/`, `n` `N` | Find in page; next and previous match |
+| `/`, `n` `N` | Find in page; next and previous match (Ctrl+J and Ctrl+K while typing) |
 | `o` `O`, `b` `B`, `T` | Search tabs, bookmarks, history and the web; bookmarks only; open tabs only |
 | `K` `J` (or `gt` `gT`), `g0` `g$` | Next and previous tab; first and last tab |
 | `t`, `x`, `X`, `yt` | New, close, reopen and duplicate a tab |
@@ -43,6 +43,8 @@ closes hints or find, and clears find highlights.
 their folders, history, and a web search with your default engine. Every word
 you type has to appear in a result's title, URL or folder, in any order.
 
+- Ctrl+J and Ctrl+K (or Tab and Shift+Tab, or the arrow keys) move down and
+  up the results.
 - `O` and `B` open results in a new tab; Shift+Enter does the opposite of the
   key you pressed.
 - A word on its own limits the search, as in Firefox's address bar:

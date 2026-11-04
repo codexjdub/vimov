@@ -1,7 +1,7 @@
 'use strict';
 
 // Find mode: search as you type with every match highlighted, then n and N to
-// step between matches. Matching is smartcase (case-sensitive only when the
+// step between matches (Ctrl+J and Ctrl+K while still typing). Matching is smartcase (case-sensitive only when the
 // query has a capital letter) and treats any run of spaces as any whitespace.
 
 Vimov.find = (() => {
@@ -14,6 +14,7 @@ Vimov.find = (() => {
 
   let lastQuery = '';
   let current = null; // Range of the current match
+  let currentLink = null; // the link select() focused for it
   let painted = false;
 
   // The page's visible text as one string, with the text node each part came from.
@@ -79,13 +80,28 @@ Vimov.find = (() => {
     painted = true;
   }
 
-  // Removes the highlights. Returns whether there were any.
+  const sameRange = (a, b) => {
+    try {
+      return a.compareBoundaryPoints(Range.START_TO_START, b) === 0 && a.compareBoundaryPoints(Range.END_TO_END, b) === 0;
+    } catch {
+      return false; // in different trees
+    }
+  };
+
+  // Removes the highlights, and the selection and link focus the current
+  // match left, unless the user has moved them since. The selection collapses
+  // to the match's start rather than going, so n and N carry on from there.
+  // Returns whether there were highlights.
   function clear() {
     const had = painted;
     registry?.delete('vimov-find');
     registry?.delete('vimov-find-current');
     painted = false;
+    const selection = getSelection();
+    if (current && selection.rangeCount === 1 && sameRange(selection.getRangeAt(0), current)) selection.collapseToStart();
+    if (currentLink?.matches(':focus')) currentLink.blur();
     current = null;
+    currentLink = null;
     return had;
   }
 
@@ -99,6 +115,7 @@ Vimov.find = (() => {
   // follows it.
   function select(range) {
     const link = range.startContainer.parentElement?.closest('a[href]');
+    currentLink = link || null;
     if (link) link.focus({ preventScroll: true });
     else if (document.activeElement !== document.body) document.activeElement?.blur?.();
     const selection = getSelection();
@@ -112,13 +129,15 @@ Vimov.find = (() => {
   }
 
   function start() {
+    // Clear the last search first, so its match isn't saved as the selection
+    // to put back if this one is cancelled.
+    clear();
     const saved = {
       x: scrollX,
       y: scrollY,
       focus: document.activeElement,
       ranges: Array.from({ length: getSelection().rangeCount }, (_, i) => getSelection().getRangeAt(i).cloneRange()),
     };
-    clear();
     const index = textIndex();
 
     const bar = document.createElement('div');
@@ -132,8 +151,9 @@ Vimov.find = (() => {
     bar.append(input, counter);
     ui.root().append(bar);
 
+    let matches = [];
     function update() {
-      const matches = search(input.value, index);
+      matches = search(input.value, index);
       // Start from where the user was reading: the first match below the top
       // of the viewport as it was when find began.
       const shift = scrollY - saved.y;
@@ -142,6 +162,16 @@ Vimov.find = (() => {
       if (current) reveal(current);
       else scrollTo(saved.x, saved.y);
       counter.dataset.text = !input.value ? '' : current ? countText(matches, current) : 'No matches';
+    }
+
+    // Ctrl+J and Ctrl+K step through the matches without leaving the bar.
+    function step(dir) {
+      if (!matches.length) return;
+      const n = matches.length;
+      current = matches[(matches.indexOf(current) + dir + n) % n];
+      paint(matches, current);
+      reveal(current);
+      counter.dataset.text = countText(matches, current);
     }
 
     // Keep typing in the bar from reaching the page's own listeners.
@@ -154,6 +184,10 @@ Vimov.find = (() => {
     const mode = {
       name: 'find',
       onKey(key) {
+        if (key === '<c-j>' || key === '<c-k>') {
+          step(key === '<c-j>' ? 1 : -1);
+          return true;
+        }
         if (key !== '<esc>' && key !== '<enter>') return false;
         outcome = key === '<enter>' ? 'accept' : 'cancel';
         Vimov.mode.exit(mode);

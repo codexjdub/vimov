@@ -85,6 +85,7 @@ Vimov.search = (() => {
     list.setAttribute('role', 'listbox');
     const footer = el('div', 'footer');
     const keys = [
+      hint('Ctrl+J/K', 'move'),
       hint('*', 'bookmarks'),
       hint('%', 'tabs'),
       hint('^', 'history'),
@@ -183,10 +184,12 @@ Vimov.search = (() => {
             return true;
           case '<down>':
           case '<tab>':
+          case '<c-j>':
             move(1);
             return true;
           case '<up>':
           case '<s-tab>':
+          case '<c-k>':
             move(-1);
             return true;
           case '<enter>':
