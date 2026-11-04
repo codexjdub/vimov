@@ -19,8 +19,10 @@ test('the default keymap builds cleanly', () => {
   assert.deepStrictEqual([keymap.errors, keymap.warnings], [[], []]);
   assert.deepStrictEqual(plain(keymap.bindings.get('B').options), { in: 'bookmarks', newTab: true });
   assert.strictEqual(keymap.bindings.get('o').command, 'search');
-  assert.strictEqual(keymap.bindings.get('] ]').command, 'nextPage');
-  assert.strictEqual(keymap.bindings.get('[ [').command, 'previousPage');
+  assert.strictEqual(keymap.bindings.get('}').command, 'nextPage');
+  assert.strictEqual(keymap.bindings.get('{').command, 'previousPage');
+  // [ and ] are left to video speed extensions.
+  assert(![...keymap.bindings.keys(), ...keymap.prefixes].some((id) => /[[\]]/.test(id)));
   assert.deepStrictEqual(plain(keymap.bindings.get('P').options), { newTab: true });
 });
 

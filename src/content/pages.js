@@ -1,7 +1,7 @@
 'use strict';
 
-// ]] and [[: follow the link to the next or previous page of search results,
-// a list or a series of articles.
+// nextPage and previousPage (} and { by default): follow the link to the next
+// or previous page of search results, a list or a series of articles.
 
 Vimov.pages = (() => {
   const { dom, ui } = Vimov;

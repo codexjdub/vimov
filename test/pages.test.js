@@ -1,6 +1,6 @@
 'use strict';
 
-// src/content/pages.js: which link ]] and [[ follow.
+// src/content/pages.js: which link } and { follow.
 
 const test = require('node:test');
 const assert = require('node:assert');

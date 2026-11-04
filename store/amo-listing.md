@@ -31,7 +31,7 @@ Vimov lets you browse without reaching for the mouse, using keys borrowed from V
 <li>j, k, h, l to scroll (hold them to glide); d and u for half a page; gg and G for the top and bottom</li>
 <li>Scrolling follows whatever you're looking at, including sidebars and inner panes</li>
 <li>H and L for back and forward, gu to go up a level in the URL</li>
-<li>]] and [[ follow a page's "next" and "previous" links, through search results, forums and article series</li>
+<li>} and { follow a page's "next" and "previous" links, through search results, forums and article series</li>
 <li>p opens the URL on the clipboard (or searches for the text), P in a new tab; gr opens Reader View</li>
 </ul>
 
