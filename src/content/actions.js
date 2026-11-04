@@ -57,7 +57,11 @@ Vimov.actions = (() => {
     reload: (n, { hard }) => Vimov.bg('reload', { hard }),
     goUp: (n) => navigate(upUrl(location.href, n)),
     goRoot: () => navigate(new URL('/', location.href).href),
+    nextPage: () => Vimov.pages.follow('next'),
+    previousPage: () => Vimov.pages.follow('previous'),
     copyUrl: () => Vimov.copyText(location.href),
+    openClipboard: (n, { newTab }) => Vimov.bg('openClipboard', { newTab: !!newTab }),
+    readerView: () => Vimov.bg('readerView'),
 
     focusInput: (n) => {
       const fields = dom.textEntries();

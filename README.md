@@ -32,11 +32,20 @@ keeps development files out of it. The listing text lives in
 | `K` `J` (or `gt` `gT`), `g0` `g$` | Next and previous tab; first and last tab |
 | `t`, `x`, `X`, `yt` | New, close, reopen and duplicate a tab |
 | `H` `L`, `r`, `gu` `gU`, `yy` | Back and forward, reload, up the URL, copy the URL |
+| `]]` `[[` | Follow the page's "next" and "previous" links |
+| `p` `P` | Open the URL on the clipboard (or search for its text), here or in a new tab |
+| `gr` | Open the page in Reader View |
 | `i`, `gi` | Pass keys to the page until Esc; focus a text field |
 
 A count repeats or scales a command: `5j`, `3K`. Holding `j`, `k`, `h` or `l`
 glides smoothly rather than jumping (unless smooth scrolling is off). Esc
 leaves a text field, closes hints or find, and clears find highlights.
+
+`]]` looks for a link marked `rel="next"`, then one whose text starts with
+"Next" or "Newer", or ends in an arrow such as `›` or `»`; `[[` does the same
+for "Prev", "Previous" and "Older". Vimov's keys don't work inside Reader View
+itself, so leave it with Firefox's own shortcut (Ctrl+Alt+R, or ⌘⌥R on a Mac)
+or the back button.
 
 ## Search
 

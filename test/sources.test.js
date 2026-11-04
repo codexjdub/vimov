@@ -213,6 +213,18 @@ test('addresses', async () => {
   assert.notStrictEqual((await first('github.com stars')).type, 'url');
 });
 
+test('text taken as it is opens as an address or a web search, never a tab', async () => {
+  const { Sources } = setup();
+  const forText = async (text) => plain(await Sources.forText(text));
+  assert.deepStrictEqual(await forText('  github.com/codexjdub/vimov\n'), {
+    type: 'url', title: 'https://github.com/codexjdub/vimov', url: 'https://github.com/codexjdub/vimov',
+  });
+  assert.strictEqual((await forText('localhost:3000')).url, 'http://localhost:3000');
+  // Hacker News is bookmarked and in history, but the text is still searched for.
+  assert.deepStrictEqual(await forText('hacker\n  news'), { type: 'web', engine: 'Google', query: 'hacker news', title: 'hacker news' });
+  assert.strictEqual((await forText('javascript:alert(1)')).type, 'web');
+});
+
 test('at most 10 results', async () => {
   const { search } = setup();
   assert((await search('doc')).length <= 10);

@@ -22,7 +22,12 @@ map r reload
 map R reload hard=true
 map gu goUp
 map gU goRoot
+map ]] nextPage
+map [[ previousPage
 map yy copyUrl
+map p openClipboard
+map P openClipboard newTab=true
+map gr readerView
 map gi focusInput
 map i enterInsertMode
 

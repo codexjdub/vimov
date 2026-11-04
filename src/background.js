@@ -25,6 +25,17 @@ const handlers = {
     browser.tabs.create({ url, active: !!active, index: tab.index + 1, openerTabId: tab.id }),
   openOptions: () => browser.runtime.openOptionsPage(),
   copyText: ({ text }) => navigator.clipboard.writeText(text),
+  openClipboard: async ({ newTab }, tab) => {
+    const text = (await navigator.clipboard.readText()).trim();
+    if (!text) throw new Error('The clipboard is empty');
+    return Sources.open(await Sources.forText(text), { newTab, tab });
+  },
+  // Firefox decides which pages Reader View can show. Vimov can only open it:
+  // extensions don't run in Reader View, so its keys don't work there.
+  readerView: async (_, tab) => {
+    if (!(await browser.tabs.get(tab.id)).isArticle) throw new Error('Reader View isn’t available for this page');
+    return browser.tabs.toggleReaderMode(tab.id);
+  },
   // The Search bar opens in the top frame, even when a key was pressed in an iframe.
   openSearch: ({ in: source, newTab }, tab) =>
     browser.tabs.sendMessage(tab.id, { cmd: 'openSearch', in: source, newTab }, { frameId: 0 }),

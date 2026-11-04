@@ -118,6 +118,19 @@ const Sources = (() => {
   }
 
   const webSearch = (engine, text) => ({ type: 'web', engine: engine.name, query: text, title: text });
+  const defaultEngine = (engines) => engines.find((e) => e.isDefault) || engines[0];
+
+  // What text opens when it's taken as it is, without looking through tabs,
+  // bookmarks and history: the address, if it's one, or else a search with the
+  // default engine.
+  async function forText(text) {
+    const words = String(text).trim().split(/\s+/).filter(Boolean);
+    const address = words.length === 1 ? asUrl(words[0]) : null;
+    if (address) return { type: 'url', title: address, url: address };
+    const engine = defaultEngine(await browser.search.get());
+    if (!engine) throw new Error('No search engine to search with');
+    return webSearch(engine, words.join(' '));
+  }
 
   // Each typed word, lower-cased, with a pattern that finds it at the start of
   // a word.
@@ -205,7 +218,7 @@ const Sources = (() => {
     }
     ranked.sort((a, b) => b.rank - a.rank);
 
-    const engine = engines.find((e) => e.isDefault) || engines[0];
+    const engine = defaultEngine(engines);
     const text = typed.join(' ');
     const address = typed.length === 1 && wants('web') ? asUrl(typed[0]) : null;
     return [
@@ -250,5 +263,5 @@ const Sources = (() => {
     throw new Error('Only tabs and history entries can be removed');
   }
 
-  return { search, open, remove, SYMBOLS };
+  return { search, forText, open, remove, SYMBOLS };
 })();

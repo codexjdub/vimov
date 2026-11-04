@@ -7,7 +7,12 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { SHARED, load, run, plain, event } = require('./helpers');
 
-function setup({ search = async () => [], exclusions = '', tabs = [{ id: 1, index: 0, windowId: 1, active: true, url: 'https://example.com/' }] } = {}) {
+function setup({
+  search = async () => [],
+  exclusions = '',
+  clipboard = '',
+  tabs = [{ id: 1, index: 0, windowId: 1, active: true, url: 'https://example.com/' }],
+} = {}) {
   const opened = [];
   const stored = { exclusions };
   const button = {}; // tab id → { enabled, badge, title }
@@ -18,6 +23,7 @@ function setup({ search = async () => [], exclusions = '', tabs = [{ id: 1, inde
     tabs: {
       query: async () => tabs,
       get: async (id) => tabs.find((t) => t.id === id),
+      toggleReaderMode: async (id) => opened.push(['reader', id]),
       onActivated: event(),
       onUpdated: event(),
     },
@@ -40,8 +46,13 @@ function setup({ search = async () => [], exclusions = '', tabs = [{ id: 1, inde
       disable: async (tabId) => show(tabId, { enabled: false }),
     },
   };
-  const ctx = load(SHARED, { browser });
-  ctx.Sources = { search, open: async (result, options) => opened.push([result, options]) };
+  const navigator = { clipboard: { readText: async () => clipboard, writeText: async () => {} } };
+  const ctx = load(SHARED, { browser, navigator });
+  ctx.Sources = {
+    search,
+    forText: async (text) => ({ type: 'url', url: text }),
+    open: async (result, options) => opened.push([result, options]),
+  };
   run(ctx, ['src/background.js']);
   return { browser, opened, stored, button };
 }
@@ -97,6 +108,33 @@ test('content-script messages resolve to { ok, result } or { error }', async () 
     ok.browser.runtime.onMessage.fire({ cmd: 'toString' }, sender),
   ]);
   assert.deepStrictEqual([unknown[0], inherited[0]], [undefined, undefined]);
+});
+
+test('p and P open the clipboard text, trimmed, here or in a new tab', async () => {
+  const sender = { tab: { id: 1, index: 0 } };
+  const { browser, opened } = setup({ clipboard: '\n https://example.org/a \n' });
+  await browser.runtime.onMessage.fire({ cmd: 'openClipboard', newTab: false }, sender);
+  await browser.runtime.onMessage.fire({ cmd: 'openClipboard', newTab: true }, sender);
+  assert.deepStrictEqual(plain(opened.map(([result, { newTab }]) => [result.url, newTab])), [
+    ['https://example.org/a', false],
+    ['https://example.org/a', true],
+  ]);
+
+  const empty = setup({ clipboard: '  \n' });
+  const [reply] = await empty.browser.runtime.onMessage.fire({ cmd: 'openClipboard' }, sender);
+  assert.deepStrictEqual([plain(reply), empty.opened], [{ error: 'The clipboard is empty' }, []]);
+});
+
+test('gr opens Reader View only where Firefox offers it', async () => {
+  const tabs = [
+    { id: 1, index: 0, url: 'https://blog.example.com/post', isArticle: true },
+    { id: 2, index: 1, url: 'https://app.example.com/', isArticle: false },
+  ];
+  const { browser, opened } = setup({ tabs });
+  await browser.runtime.onMessage.fire({ cmd: 'readerView' }, { tab: tabs[0] });
+  const [reply] = await browser.runtime.onMessage.fire({ cmd: 'readerView' }, { tab: tabs[1] });
+  assert.deepStrictEqual(plain(opened), [['reader', 1]]);
+  assert.deepStrictEqual(plain(reply), { error: 'Reader View isn’t available for this page' });
 });
 
 // Lets the listeners' own awaits settle.

@@ -19,6 +19,9 @@ test('the default keymap builds cleanly', () => {
   assert.deepStrictEqual([keymap.errors, keymap.warnings], [[], []]);
   assert.deepStrictEqual(plain(keymap.bindings.get('B').options), { in: 'bookmarks', newTab: true });
   assert.strictEqual(keymap.bindings.get('o').command, 'search');
+  assert.strictEqual(keymap.bindings.get('] ]').command, 'nextPage');
+  assert.strictEqual(keymap.bindings.get('[ [').command, 'previousPage');
+  assert.deepStrictEqual(plain(keymap.bindings.get('P').options), { newTab: true });
 });
 
 test('key notation', () => {
@@ -30,7 +33,7 @@ test('key notation', () => {
 });
 
 test('a shorter mapping that hides a longer one is a warning', () => {
-  assert.deepStrictEqual(build('map g scrollDown').warnings, ['g is mapped, so gg, gu, gU, gi, gt, gT, g0, g$ can never be typed']);
+  assert.deepStrictEqual(build('map g scrollDown').warnings, ['g is mapped, so gg, gu, gU, gr, gi, gt, gT, g0, g$ can never be typed']);
 });
 
 test('openUrl takes a text url with = in it', () => {
@@ -63,6 +66,7 @@ test('descriptions', () => {
   assert.strictEqual(Vimov.describeCommand('search', {}), 'Search tabs, bookmarks, history and the web');
   assert.strictEqual(Vimov.describeCommand('search', { in: 'bookmarks', newTab: true }), 'Search bookmarks, opening in a new tab');
   assert.strictEqual(Vimov.describeCommand('openUrl', { url: 'mail.google.com' }), 'Open mail.google.com');
+  assert.strictEqual(Vimov.describeCommand('openClipboard', { newTab: true }), 'Open the URL on the clipboard in a new tab, or search for its text');
 });
 
 test('exclusion patterns', () => {

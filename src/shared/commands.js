@@ -49,7 +49,16 @@ globalThis.Vimov = globalThis.Vimov || {};
     },
     goUp: { category: 'Page', description: 'Go up one level in the URL' },
     goRoot: { category: 'Page', description: 'Go to the root of the site' },
+    nextPage: { category: 'Page', description: 'Follow the link to the next page' },
+    previousPage: { category: 'Page', description: 'Follow the link to the previous page' },
     copyUrl: { category: 'Page', description: 'Copy the page URL' },
+    openClipboard: {
+      category: 'Page',
+      description: (o) =>
+        o.newTab ? 'Open the URL on the clipboard in a new tab, or search for its text' : 'Open the URL on the clipboard, or search for its text',
+      options: { newTab: 'boolean' },
+    },
+    readerView: { category: 'Page', description: 'Open the page in Reader View' },
     focusInput: { category: 'Page', description: 'Focus the first text field in view (nth with a count)' },
     enterInsertMode: { category: 'Page', description: 'Pass every key to the page until Esc' },
     openUrl: {

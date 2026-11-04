@@ -4,6 +4,7 @@ Permissions:
 - Content scripts on all URLs: Vimov handles keyboard commands on every page.
 - storage: the user's key mappings and settings.
 - sessions: "reopen closed tab" (X).
+- clipboardRead: p and P open the URL on the clipboard, or search for its text with the user's default search engine, only when the user presses them. The clipboard is read in the background page (src/background.js, openClipboard) and nothing is kept.
 - clipboardWrite: copying the page URL (yy) and link URLs (yf) from the background page when the page itself can't write to the clipboard.
 - tabs, bookmarks, history: the Search bar (o) and the "v" address-bar keyword search the titles and URLs of open tabs, bookmarks and history entries, so the user can switch to or open them. Bookmarks are only read, never changed. Shift+Delete on a history result deletes that entry, only when the user asks. The toolbar button reads the active tab's URL to turn Vimov off or on for that site; it only edits the user's excluded-sites setting in storage.
 - search: web searches from the Search bar use the user's own search engines through search.search().
