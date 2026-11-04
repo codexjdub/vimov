@@ -28,7 +28,7 @@ Vimov lets you browse without reaching for the mouse, using keys borrowed from V
 
 <b>Move around</b>
 <ul>
-<li>j, k, h, l to scroll; d and u for half a page; gg and G for the top and bottom</li>
+<li>j, k, h, l to scroll (hold them to glide); d and u for half a page; gg and G for the top and bottom</li>
 <li>Scrolling follows whatever you're looking at, including sidebars and inner panes</li>
 <li>H and L for back and forward, gu to go up a level in the URL</li>
 </ul>
@@ -72,6 +72,7 @@ Mappings are plain lines on the options page, checked as you type:
 Turn Vimov off on sites with their own shortcuts, or let just a few keys through:
 <code>mail.google.com</code>
 <code>*.youtube.com f j k l</code>
+Or click the toolbar button to turn Vimov off for the site you're on, and again to turn it back on.
 
 Typing in a text field always goes to the page; Esc leaves the field. Press i to send every key to the page until Esc.
 
@@ -99,6 +100,12 @@ Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF 
 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
+
+## Version notes (0.3.0)
+
+```
+New: a toolbar button turns Vimov off for the site you're on, and back on. Holding j, k, h or l now glides smoothly instead of jumping. The Search bar is quicker, looking up tabs, bookmarks and history at the same time, and n and N in find no longer re-read the whole page on every press. Fixed: picking a tab among the address-bar suggestions could load its page instead of switching to it.
+```
 
 ## Version notes (0.2.2)
 
