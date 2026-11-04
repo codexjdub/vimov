@@ -103,6 +103,14 @@ Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.4.0)
+
+```
+New: ]] and [[ follow a page's "next" and "previous" links, through search results, forums and article series. p opens the URL on the clipboard, or searches for its text, and P does the same in a new tab. gr opens Reader View.
+
+Vimov now asks to read the clipboard, which it does only when you press p or P.
+```
+
 ## Version notes (0.3.0)
 
 ```
