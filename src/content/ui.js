@@ -1,7 +1,7 @@
 'use strict';
 
-// On-page UI: a closed shadow root that holds the HUD, hint markers, find bar
-// and help overlay, isolated from the page's CSS.
+// On-page UI: a closed shadow root that holds the HUD, hint markers, find bar,
+// help overlay and Search bar, isolated from the page's CSS.
 
 Vimov.ui = (() => {
   const CSS = `
@@ -85,12 +85,28 @@ Vimov.ui = (() => {
       padding: 24px 16px;
       background: rgba(9, 9, 11, 0.4);
     }
-    .help {
+    .backdrop.top { align-items: flex-start; padding-top: 12vh; }
+    .help, .search {
       --bg: #ffffff;
       --fg: #18181b;
       --muted: #71717a;
       --line: #e4e4e7;
       --key: #f4f4f5;
+      --accent: #b45309;
+      --selected: #fef3c7;
+    }
+    @media (prefers-color-scheme: dark) {
+      .help, .search {
+        --bg: #18181b;
+        --fg: #f4f4f5;
+        --muted: #a1a1aa;
+        --line: #333338;
+        --key: #27272a;
+        --accent: #fbbf24;
+        --selected: #3a3220;
+      }
+    }
+    .help {
       width: min(880px, 100%);
       max-height: 100%;
       overflow: auto;
@@ -100,15 +116,6 @@ Vimov.ui = (() => {
       color: var(--fg);
       font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-    }
-    @media (prefers-color-scheme: dark) {
-      .help {
-        --bg: #18181b;
-        --fg: #f4f4f5;
-        --muted: #a1a1aa;
-        --line: #333338;
-        --key: #27272a;
-      }
     }
     .help header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
     .help h1 { margin: 0; font-size: 18px; font-weight: 650; }
@@ -134,12 +141,66 @@ Vimov.ui = (() => {
     }
     .help .row { display: flex; gap: 12px; padding: 3px 0; border-bottom: 1px solid var(--line); }
     .help .keys { flex: 0 0 104px; display: flex; flex-wrap: wrap; gap: 4px; }
-    .help kbd {
+    .help kbd, .search kbd {
       padding: 0 5px;
       border: 1px solid var(--line);
       border-radius: 4px;
       background: var(--key);
       font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .search {
+      display: flex;
+      flex-direction: column;
+      width: min(640px, 100%);
+      max-height: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--fg);
+      font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+    .search input {
+      all: unset;
+      display: block;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      color: inherit;
+      font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+      caret-color: var(--accent);
+    }
+    .search input::placeholder { color: var(--muted); }
+    .search .results { margin: 0; padding: 6px; overflow: auto; list-style: none; }
+    .search .result {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .search .result.selected { background: var(--selected); }
+    .search .tag {
+      flex: 0 0 60px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .search .text { display: flex; flex-direction: column; min-width: 0; }
+    .search .title, .search .detail { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .search .detail { color: var(--muted); font-size: 12px; }
+    .search b { color: var(--accent); font-weight: 650; }
+    .search .footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      padding: 8px 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
     }
   `;
 

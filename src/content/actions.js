@@ -56,6 +56,12 @@ Vimov.actions = (() => {
       ui.flash(dom.visibleRect(el));
     },
 
+    openUrl: (n, { url, newTab }) => {
+      const href = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).href;
+      if (newTab) return Vimov.bg('openUrl', { url: href, active: true });
+      return navigate(href);
+    },
+
     enterInsertMode: () => {
       const mode = {
         name: 'insert',
@@ -75,6 +81,9 @@ Vimov.actions = (() => {
     find: () => Vimov.find.start(),
     findNext: (n) => Vimov.find.next(1, n),
     findPrevious: (n) => Vimov.find.next(-1, n),
+
+    // The bar opens in the top frame; from an iframe, the background page passes it up.
+    search: (n, options) => (window.top === window ? Vimov.search.open(options) : Vimov.bg('openSearch', options)),
 
     nextTab: tabCommand('nextTab'),
     previousTab: tabCommand('previousTab'),

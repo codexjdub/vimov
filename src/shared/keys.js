@@ -138,12 +138,16 @@ Vimov.keys = (() => {
       } else if (type === 'boolean') {
         if (value !== 'true' && value !== 'false') throw new Error(`${name} must be true or false`);
         options[name] = value === 'true';
+      } else if (type === 'string') {
+        options[name] = value;
       } else {
         const number = Number(value);
         if (!Number.isFinite(number)) throw new Error(`${name} must be a number`);
         options[name] = number;
       }
     }
+    const missing = (spec.required || []).filter((name) => !(name in options));
+    if (missing.length) throw new Error(`${command} needs ${missing.map((name) => `${name}=…`).join(' ')}`);
     return options;
   }
 

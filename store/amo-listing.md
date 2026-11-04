@@ -19,7 +19,7 @@ tags (`<b>`, `<i>`, `<code>`, `<a>`, `<ul>`, `<li>`); Markdown isn't rendered.
 
 **Summary** (250 characters max):
 
-> Browse the web from the keyboard with Vim-style keys: scroll with j and k, follow links with hints, find on the page, and switch tabs without the mouse. Remap anything with a few readable lines.
+> Browse from the keyboard with Vim-style keys: scroll with j and k, follow links with hints, find on the page, search tabs, bookmarks and history from one box, and switch tabs without the mouse. Remap anything with a few readable lines.
 
 **Description:**
 
@@ -47,6 +47,15 @@ Vimov lets you browse without reaching for the mouse, using keys borrowed from V
 <li>Case-insensitive unless you type a capital letter</li>
 </ul>
 
+<b>Search everything from one box</b>
+<ul>
+<li>o searches open tabs, bookmarks, history and the web together; b searches bookmarks, T open tabs</li>
+<li>Type * for bookmarks, % for tabs, ^ for history or ? for the web, just like Firefox's address bar</li>
+<li>Enter switches to a tab, opens a page or a whole bookmark folder; Shift+Enter opens it in a new tab</li>
+<li>Your search engine keywords work too: @wikipedia vim</li>
+<li>Type v and a space in the address bar for the same search on the new-tab page</li>
+</ul>
+
 <b>Tabs</b>
 <ul>
 <li>K and J (or gt and gT) for the next and previous tab, g0 and g$ for the first and last</li>
@@ -57,6 +66,7 @@ Vimov lets you browse without reaching for the mouse, using keys borrowed from V
 Mappings are plain lines on the options page, checked as you type:
 <code>map &lt;c-d&gt; scrollHalfDown</code>
 <code>map F linkHints action=newTabFg</code>
+<code>map gm openUrl url=https://mail.google.com</code>
 <code>unmap x</code>
 
 Turn Vimov off on sites with their own shortcuts, or let just a few keys through:
@@ -65,7 +75,7 @@ Turn Vimov off on sites with their own shortcuts, or let just a few keys through
 
 Typing in a text field always goes to the page; Esc leaves the field. Press i to send every key to the page until Esc.
 
-Vimov collects no data and makes no network requests.
+Vimov collects no data and makes no network requests. Your tabs, bookmarks and history are only searched on your computer.
 
 Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF viewer or Reader View, so Vimov can't work there.
 ```
@@ -95,8 +105,20 @@ Permissions:
 - storage: the user's key mappings and settings.
 - sessions: "reopen closed tab" (X).
 - clipboardWrite: copying the page URL (yy) and link URLs (yf) from the background page when the page itself can't write to the clipboard.
+- tabs, bookmarks, history: the Search bar (o) and the "v" address-bar keyword search the titles and URLs of open tabs, bookmarks and history entries, so the user can switch to or open them. Bookmarks are only read, never changed. Shift+Delete on a history result deletes that entry, only when the user asks.
+- search: web searches from the Search bar use the user's own search engines through search.search().
 
-To try it, load the add-on, open any page and press ? for the list of keys, or f for link hints.
+Search results are matched in the background page (src/sources.js) and drawn in a closed shadow root on the page; nothing is stored or sent anywhere.
+
+To try it, load the add-on, open any page and press ? for the list of keys, f for link hints or o to search.
+```
+
+## Version notes (0.2.0)
+
+```
+New: one Search bar for open tabs, bookmarks, history and the web (o, O, b, B, T), with Firefox's * % ^ ? shortcuts, search engine keywords, opening whole bookmark folders, and Shift+Delete to close tabs or remove history entries. Type v and a space in the address bar for the same search on pages Vimov can't run on. openUrl maps a key to a site.
+
+Vimov now asks to access tabs, bookmarks and history so it can search them. Nothing leaves your computer.
 ```
 
 ## Version notes (0.1.0)

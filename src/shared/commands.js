@@ -16,8 +16,16 @@ globalThis.Vimov = globalThis.Vimov || {};
     focus: 'Focus an element',
   };
 
+  const SEARCH_SOURCES = {
+    all: 'Search tabs, bookmarks, history and the web',
+    tabs: 'Search open tabs',
+    bookmarks: 'Search bookmarks',
+    history: 'Search history',
+  };
+
   // `options` maps option names to types: an array lists the allowed values,
-  // otherwise 'boolean' or 'number'. `description` may depend on the options.
+  // otherwise 'boolean', 'number' or 'string'. `required` lists options a
+  // mapping must set. `description` may depend on the options.
   const COMMANDS = {
     scrollDown: { category: 'Scrolling', description: 'Scroll down' },
     scrollUp: { category: 'Scrolling', description: 'Scroll up' },
@@ -44,6 +52,12 @@ globalThis.Vimov = globalThis.Vimov || {};
     copyUrl: { category: 'Page', description: 'Copy the page URL' },
     focusInput: { category: 'Page', description: 'Focus the first text field in view (nth with a count)' },
     enterInsertMode: { category: 'Page', description: 'Pass every key to the page until Esc' },
+    openUrl: {
+      category: 'Page',
+      description: (o) => (o.url ? `Open ${o.url}` : 'Open a URL') + (o.newTab ? ' in a new tab' : ''),
+      options: { url: 'string', newTab: 'boolean' },
+      required: ['url'],
+    },
 
     linkHints: {
       category: 'Links',
@@ -54,6 +68,12 @@ globalThis.Vimov = globalThis.Vimov || {};
     find: { category: 'Find', description: 'Find in page' },
     findNext: { category: 'Find', description: 'Go to the next match' },
     findPrevious: { category: 'Find', description: 'Go to the previous match' },
+
+    search: {
+      category: 'Search',
+      description: (o) => SEARCH_SOURCES[o.in || 'all'] + (o.newTab ? ', opening in a new tab' : ''),
+      options: { in: Object.keys(SEARCH_SOURCES), newTab: 'boolean' },
+    },
 
     nextTab: { category: 'Tabs', description: 'Go one tab right' },
     previousTab: { category: 'Tabs', description: 'Go one tab left' },
@@ -72,7 +92,7 @@ globalThis.Vimov = globalThis.Vimov || {};
   };
 
   Vimov.COMMANDS = COMMANDS;
-  Vimov.CATEGORIES = ['Scrolling', 'Page', 'Links', 'Find', 'Tabs', 'Other'];
+  Vimov.CATEGORIES = ['Scrolling', 'Page', 'Links', 'Find', 'Search', 'Tabs', 'Other'];
 
   Vimov.describeCommand = (name, options = {}) => {
     const { description } = COMMANDS[name] || {};

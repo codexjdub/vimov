@@ -36,6 +36,13 @@ map / find
 map n findNext
 map N findPrevious
 
+# Search
+map o search
+map O search newTab=true
+map b search in=bookmarks
+map B search in=bookmarks newTab=true
+map T search in=tabs
+
 # Tabs
 map K nextTab
 map J previousTab

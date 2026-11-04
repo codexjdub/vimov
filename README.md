@@ -1,7 +1,8 @@
 # Vimov
 
-Vim-style keyboard browsing for Firefox: scrolling, link hints, find, and tab
-commands, with a small config language that's easy to read.
+Vim-style keyboard browsing for Firefox: scrolling, link hints, find, one
+search box for tabs, bookmarks and history, and tab commands, with a small
+config language that's easy to read.
 
 ## Try it
 
@@ -27,6 +28,7 @@ keeps development files out of it. The listing text lives in
 | `j` `k` `h` `l`, `d` `u`, `gg` `G` | Scroll; half page; top and bottom |
 | `f`, `F`, `yf` | Link hints: click, open in a new tab, copy the URL |
 | `/`, `n` `N` | Find in page; next and previous match |
+| `o` `O`, `b` `B`, `T` | Search tabs, bookmarks, history and the web; bookmarks only; open tabs only |
 | `K` `J` (or `gt` `gT`), `g0` `g$` | Next and previous tab; first and last tab |
 | `t`, `x`, `X`, `yt` | New, close, reopen and duplicate a tab |
 | `H` `L`, `r`, `gu` `gU`, `yy` | Back and forward, reload, up the URL, copy the URL |
@@ -34,6 +36,24 @@ keeps development files out of it. The listing text lives in
 
 A count repeats or scales a command: `5j`, `3K`. Esc leaves a text field,
 closes hints or find, and clears find highlights.
+
+## Search
+
+`o` opens one box for everything: open tabs in every window, bookmarks and
+their folders, history, and a web search with your default engine. Every word
+you type has to appear in a result's title, URL or folder, in any order.
+
+- `O` and `B` open results in a new tab; Shift+Enter does the opposite of the
+  key you pressed.
+- A word on its own limits the search, as in Firefox's address bar:
+  `*` bookmarks, `%` tabs, `^` history, `?` the web.
+- Start with a search engine's keyword (set in Firefox's search settings) or
+  `@` and its name to search with it: `@wikipedia vim`.
+- Enter switches to a tab, opens a page, or opens every bookmark in a folder
+  (asking first for more than 10). Shift+Delete closes a tab or removes a
+  history entry; bookmarks are never removed.
+- Type `v` and a space in Firefox's address bar for the same search on pages
+  Vimov can't run on, such as the new-tab page.
 
 ## Configure
 
@@ -43,6 +63,7 @@ of the defaults:
 ```
 map <c-d> scrollHalfDown
 map F linkHints action=newTabFg
+map gm openUrl url=https://mail.google.com
 unmap x
 ```
 
@@ -61,7 +82,9 @@ mail.google.com
   or the keymap, and `actions.js` holds the command implementations.
 - `src/shared/` is used by both the content script and the options page: the
   command registry, default keymap and key-notation parser.
-- `src/background.js` does the tab work a content script can't.
+- `src/background.js` does the tab work a content script can't, and
+  `src/sources.js` finds and ranks results for the Search bar and the
+  address-bar keyword.
 - `dev/playground.html` is a page of tricky cases (hidden and covered links,
   shadow DOM, inner scrollers, text split across elements). Open it in Firefox
   with Vimov loaded, or run the content scripts in any browser through the
@@ -71,8 +94,9 @@ mail.google.com
 ## Limits
 
 Firefox doesn't run extensions on `about:` pages, `addons.mozilla.org`, the
-PDF viewer or Reader View, so Vimov can't work there. Link hints and find cover
-the frame that has focus; hints across iframes are planned.
+PDF viewer or Reader View, so Vimov can't work there; the `v` address-bar
+keyword still searches from them. Link hints and find cover the frame that has
+focus; hints across iframes are planned.
 
 ## License
 

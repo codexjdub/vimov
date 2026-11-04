@@ -80,9 +80,11 @@ async function save() {
   $('status').textContent = 'Saved';
 }
 
+const TYPE_SYNTAX = { boolean: 'true|false', number: '<number>', string: '<text>' };
+
 function optionSyntax(options = {}) {
   return Object.entries(options)
-    .map(([name, type]) => `${name}=${Array.isArray(type) ? type.join('|') : type === 'boolean' ? 'true|false' : '<number>'}`)
+    .map(([name, type]) => `${name}=${Array.isArray(type) ? type.join('|') : TYPE_SYNTAX[type]}`)
     .join(' ');
 }
 

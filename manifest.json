@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Vimov",
-  "version": "0.1.0",
-  "description": "Browse with Vim-style keys: scrolling, link hints, find and tab commands.",
+  "version": "0.2.0",
+  "description": "Browse with Vim-style keys: scrolling, link hints, find, one search box for tabs, bookmarks and history, and tab commands.",
   "icons": {
     "48": "icons/vimov.svg",
     "96": "icons/vimov.svg"
@@ -16,9 +16,12 @@
       }
     }
   },
-  "permissions": ["storage", "sessions", "clipboardWrite"],
+  "permissions": ["storage", "sessions", "clipboardWrite", "tabs", "bookmarks", "history", "search"],
   "background": {
-    "scripts": ["src/background.js"]
+    "scripts": ["src/sources.js", "src/background.js"]
+  },
+  "omnibox": {
+    "keyword": "v"
   },
   "content_scripts": [
     {
@@ -37,6 +40,7 @@
         "src/content/hints.js",
         "src/content/find.js",
         "src/content/help.js",
+        "src/content/search.js",
         "src/content/actions.js",
         "src/content/main.js"
       ]
