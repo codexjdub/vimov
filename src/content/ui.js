@@ -1,7 +1,7 @@
 'use strict';
 
 // On-page UI: a closed shadow root that holds the HUD, hint markers, find bar,
-// help overlay and Search bar, isolated from the page's CSS.
+// help overlay and vbar, isolated from the page's CSS.
 
 Vimov.ui = (() => {
   const CSS = `

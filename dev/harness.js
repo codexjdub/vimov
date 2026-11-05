@@ -14,7 +14,7 @@
   };
   const stored = () => JSON.parse(localStorage.getItem('vimov-harness-settings') || '{}');
 
-  // Made-up tabs, bookmarks, history and search engines for the Search bar.
+  // Made-up tabs, bookmarks, history and search engines for the vbar.
   // src/sources.js runs on them here just as it does in the background page.
   const bookmark = (id, title, url, dateAdded = 0) => ({ id, type: 'bookmark', title, url, dateAdded });
   const folder = (id, title, children) => ({ id, type: 'folder', title, children });

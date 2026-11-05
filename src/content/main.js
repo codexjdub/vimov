@@ -157,7 +157,7 @@
   browser.storage.onChanged.addListener((changes, area) => {
     if (area === 'sync') loadSettings();
   });
-  // The Search bar, asked for from an iframe in this tab.
+  // The vbar, asked for from an iframe in this tab.
   browser.runtime.onMessage.addListener((message) => {
     if (message?.cmd === 'openSearch' && window.top === window) Vimov.search.open(message);
   });

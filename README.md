@@ -28,7 +28,7 @@ keeps development files out of it. The listing text lives in
 | `j` `k` `h` `l`, `d` `u`, `gg` `G` | Scroll; half page; top and bottom |
 | `f`, `F`, `yf` | Link hints: click, open in a new tab, copy the URL |
 | `/`, `n` `N` | Find in page; next and previous match (Ctrl+J and Ctrl+K while typing) |
-| `o` `O`, `b` `B`, `T` | Search tabs, bookmarks, history and the web; bookmarks only; open tabs only |
+| `o` `O`, `b` `B`, `T` | Search tabs, bookmarks, history and the web in the vbar; bookmarks only; open tabs only |
 | `K` `J` (or `gt` `gT`), `g0` `g$` | Next and previous tab; first and last tab |
 | `t`, `x`, `X`, `yt` | New, close, reopen and duplicate a tab |
 | `H` `L`, `r`, `gu` `gU`, `yy` | Back and forward, reload, up the URL, copy the URL |
@@ -52,11 +52,12 @@ Firefox doesn't let extensions into Reader View, so Vimov's keys don't work
 there. Leave it with Firefox's own shortcut (Ctrl+Alt+R, or ⌘⌥R on a Mac),
 the Reader View button in the address bar, or the back button.
 
-## Search
+## The vbar
 
-`o` opens one box for everything: open tabs in every window, bookmarks and
-their folders, history, and a web search with your default engine. Every word
-you type has to appear in a result's title, URL or folder, in any order.
+`o` opens the vbar, one box for everything: open tabs in every window,
+bookmarks and their folders, history, and a web search with your default
+engine. Every word you type has to appear in a result's title, URL or
+folder, in any order.
 
 - Ctrl+J and Ctrl+K (or Tab and Shift+Tab, or the arrow keys) move down and
   up the results.
@@ -106,7 +107,7 @@ button opens the options page instead of changing it.
   command registry, default keymap and key-notation parser.
 - `src/background.js` does the tab work a content script can't, the
   address-bar keyword and the toolbar button; `src/sources.js` finds and ranks
-  results for the Search bar and the keyword.
+  results for the vbar and the keyword.
 - `test/` has Node tests that load the scripts with stand-in browser APIs:
   `npm install` once, then `npm test`. `npm run lint`, `npm run build` and
   `npm start` (Firefox with Vimov loaded) run the pinned web-ext.

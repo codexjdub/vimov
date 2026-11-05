@@ -36,7 +36,7 @@ const handlers = {
     if (!(await browser.tabs.get(tab.id)).isArticle) throw new Error('Reader View isn’t available for this page');
     return browser.tabs.toggleReaderMode(tab.id);
   },
-  // The Search bar opens in the top frame, even when a key was pressed in an iframe.
+  // The vbar opens in the top frame, even when a key was pressed in an iframe.
   openSearch: ({ in: source, newTab }, tab) =>
     browser.tabs.sendMessage(tab.id, { cmd: 'openSearch', in: source, newTab }, { frameId: 0 }),
   search: ({ query, in: source }, tab) => Sources.search(query, { source, tab }),
@@ -65,8 +65,8 @@ browser.runtime.onMessage.addListener((message, sender) => {
     );
 });
 
-// The address-bar keyword: "v", a space, then the same search as the Search
-// bar. Firefox shows suggestions as plain text.
+// The address-bar keyword: "v", a space, then the same search as the vbar.
+// Firefox shows suggestions as plain text.
 const TAGS = { tab: 'Tab', bookmark: 'Bookmark', history: 'History' };
 let suggested = new Map(); // suggestion content (its URL) → result
 let typedCount = 0; // input changes so far, to spot answers that arrive late

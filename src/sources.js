@@ -1,6 +1,6 @@
 'use strict';
 
-// What the Search bar and the address-bar keyword look through: open tabs,
+// What the vbar and the address-bar keyword look through: open tabs,
 // bookmarks, history and search engines, matched against the typed words and
 // ranked together. Runs in the background page, which has the APIs.
 

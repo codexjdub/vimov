@@ -1,6 +1,6 @@
 'use strict';
 
-// src/sources.js: what the Search bar and the address-bar keyword find, how
+// src/sources.js: what the vbar and the address-bar keyword find, how
 // it's ranked, and how results open.
 
 const test = require('node:test');

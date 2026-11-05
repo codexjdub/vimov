@@ -1,6 +1,6 @@
 'use strict';
 
-// Search bar: one box for open tabs, bookmarks, history and the web. The
+// The vbar: one box for open tabs, bookmarks, history and the web. The
 // background page finds and ranks the results (src/sources.js); this draws
 // them and handles the keys.
 
