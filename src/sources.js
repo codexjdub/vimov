@@ -2,12 +2,13 @@
 
 // What the vbar and the address-bar keyword look through: open tabs,
 // bookmarks, history and search engines, matched against the typed words and
-// ranked together. Runs in the background page, which has the APIs.
+// ranked together. Runs in the background page, which has the APIs, after
+// the shared scripts.
 
 const Sources = (() => {
   const MAX_RESULTS = 10;
-  // Words that limit a search to one source, as in Firefox's address bar.
-  const SYMBOLS = { '*': 'bookmarks', '%': 'tabs', '^': 'history', '?': 'web' };
+  const SYMBOLS = Vimov.SEARCH_SYMBOLS;
+  const { escapeRegExp } = Vimov.keys;
   // A result ranked at least this high is listed above the web search: a
   // title or site that starts with the words, or, for an open tab or a page
   // used often, a word in the title that does.
@@ -26,8 +27,6 @@ const Sources = (() => {
       'tv gg fm sh so ly to cc uk de fr nl be es it pt ch at se no fi dk pl cz ie eu ru ua jp cn kr tw hk in au nz ca us mx br ar za il'
     ).split(' '),
   );
-
-  const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   let bookmarkCache = null; // Promise of every bookmark and folder, flattened
   const forgetBookmarks = () => {
@@ -308,5 +307,5 @@ const Sources = (() => {
     throw new Error('Only tabs and history entries can be removed');
   }
 
-  return { search, forText, open, remove, SYMBOLS };
+  return { search, forText, open, remove };
 })();

@@ -8,7 +8,9 @@ const fields = {
   scrollStep: $('scrollStep'),
   smoothScroll: $('smoothScroll'),
 };
-let saved = ''; // the stored settings as JSON, to detect unsaved changes
+// The stored settings as the fields show them, to tell which have been
+// edited. null for one that changed elsewhere while edited here.
+let stored = {};
 
 function read() {
   return {
@@ -20,13 +22,17 @@ function read() {
   };
 }
 
+// Shows settings in their fields; settings not given are left alone.
 function fill(settings) {
-  fields.keymap.value = settings.keymap;
-  fields.exclusions.value = settings.exclusions;
-  fields.hintChars.value = settings.hintChars;
-  fields.scrollStep.value = settings.scrollStep;
-  fields.smoothScroll.checked = settings.smoothScroll;
+  for (const [name, value] of Object.entries(settings)) {
+    if (!Object.hasOwn(fields, name)) continue;
+    if (fields[name].type === 'checkbox') fields[name].checked = value;
+    else fields[name].value = value;
+  }
 }
+
+// The names of the settings edited here and not saved.
+const edited = (settings) => Object.keys(fields).filter((name) => settings[name] !== stored[name]);
 
 function lineProblems(errors) {
   return errors.map(({ line, message }) => ({ level: 'error', text: `Line ${line}: ${message}` }));
@@ -59,23 +65,28 @@ function validate(settings) {
 function refresh() {
   const settings = read();
   const valid = validate(settings);
-  const dirty = JSON.stringify(settings) !== saved;
+  const dirty = edited(settings).length > 0;
   $('save').disabled = !valid || !dirty;
   $('status').textContent = !valid ? 'Fix the errors to save.' : dirty ? 'Unsaved changes' : '';
 }
 
+// Saves only the settings edited here, so one changed elsewhere in the
+// meantime (by the toolbar button, say) isn't put back.
 async function save() {
   const settings = read();
-  if (!validate(settings) || JSON.stringify(settings) === saved) return;
+  const names = edited(settings);
+  if (!validate(settings) || !names.length) return;
   settings.hintChars = Vimov.normalizeHintChars(settings.hintChars);
+  const changes = Object.fromEntries(names.map((name) => [name, settings[name]]));
   try {
-    await browser.storage.sync.set(settings);
+    await browser.storage.sync.set(changes);
   } catch (err) {
     $('status').textContent = `Couldn’t save: ${err.message}`;
     return;
   }
-  fill(settings);
-  saved = JSON.stringify(read());
+  fill(changes);
+  const now = read();
+  for (const name of names) stored[name] = now[name];
   refresh();
   $('status').textContent = 'Saved';
 }
@@ -123,21 +134,29 @@ addEventListener('keydown', (e) => {
   }
 });
 addEventListener('beforeunload', (e) => {
-  if (JSON.stringify(read()) !== saved) e.preventDefault();
+  if (edited(read()).length) e.preventDefault();
 });
 
 function load() {
   return browser.storage.sync.get(Vimov.DEFAULT_SETTINGS).then((settings) => {
     fill(settings);
-    saved = JSON.stringify(read());
+    stored = read();
     refresh();
   });
 }
 
 buildReference();
 load();
-// Settings changed elsewhere, by the toolbar button or another options tab.
-// Show them, unless there are unsaved edits here.
+// Settings changed elsewhere, by the toolbar button or another options tab:
+// shown in the fields not edited here. An edited field keeps the edit, and
+// saving writes it.
 browser.storage.onChanged.addListener((changes, area) => {
-  if (area === 'sync' && JSON.stringify(read()) === saved) load();
+  if (area !== 'sync') return;
+  const current = read();
+  const names = Object.keys(changes).filter((name) => Object.hasOwn(fields, name));
+  const untouched = names.filter((name) => current[name] === stored[name]);
+  fill(Object.fromEntries(untouched.map((name) => [name, changes[name].newValue ?? Vimov.DEFAULT_SETTINGS[name]])));
+  const now = read();
+  for (const name of names) stored[name] = untouched.includes(name) ? now[name] : null;
+  refresh();
 });

@@ -9,21 +9,25 @@ Vimov.pages = (() => {
   // How a link to the next or previous page is marked or labelled, best
   // first: rel="next", then a word at the start of its text, then an arrow on
   // its own or at the end (the start, for previous). Newer counts as next and
-  // older as previous, as in Vimium and Tridactyl.
+  // older as previous, as in Vimium and Tridactyl. The word has to end there,
+  // so "Next page" and "Prev. page" count but "Next.js" and "Next-gen" don't.
+  // A single arrow (› ‹) beats a double one (» «), which in a row of page
+  // numbers usually goes to the last or first page.
   //
   // In Chinese, simplified and traditional: 下一页 (next page), then the next
   // chapter (章), episode (话), section (节), article (篇), image (张) or
   // message (封), with 上 for previous. Only those characters count, so 下载
   // (download) and 首页 (home) don't.
   const REL = { next: ['next'], previous: ['prev', 'previous'] };
+  const word = (w) => new RegExp(`^${w}(?![\\w-]|\\.\\w)`, 'i');
   const PATTERNS = {
     next: [
-      /^next\b/i, /^newer\b/i, /^(?:下一?|后一|後一)[页頁]/, /^下一?[章话話节節篇张張封]/,
-      /^(?:>|›|→|»|≫|>>)$/, /(?:>|›|→|»|≫)$/, /^more$/i,
+      word('next'), word('newer'), /^(?:下一?|后一|後一)[页頁]/, /^下一?[章话話节節篇张張封]/,
+      /^(?:>|›|→)$/, /^(?:»|≫|>>)$/, /(?:(?<!>)>|›|→)$/, /(?:»|≫|>>)$/, /^more$/i,
     ],
     previous: [
-      /^prev(?:ious)?\b/i, /^older\b/i, /^(?:上一?|前一)[页頁]/, /^上一?[章话話节節篇张張封]/,
-      /^(?:<|‹|←|«|≪|<<)$/, /^(?:<|‹|←|«|≪)/,
+      word('prev(?:ious)?'), word('older'), /^(?:上一?|前一)[页頁]/, /^上一?[章话話节節篇张張封]/,
+      /^(?:<|‹|←)$/, /^(?:«|≪|<<)$/, /^(?:<(?!<)|‹|←)/, /^(?:«|≪|<<)/,
     ],
   };
   // Longer text is more often a headline that happens to start with "Next".

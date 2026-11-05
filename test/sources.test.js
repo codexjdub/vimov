@@ -5,7 +5,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const { load, get, plain, event } = require('./helpers');
+const { SHARED, load, get, plain, event } = require('./helpers');
 
 const bookmark = (id, title, url, dateAdded = 0) => ({ id, type: 'bookmark', title, url, dateAdded });
 const folder = (id, title, children) => ({ id, type: 'folder', title, children });
@@ -89,7 +89,7 @@ function fakeBrowser(overrides = {}) {
 
 function setup(overrides) {
   const { browser, calls } = fakeBrowser(overrides);
-  const Sources = get(load(['src/sources.js'], { browser }), 'Sources');
+  const Sources = get(load([...SHARED, 'src/sources.js'], { browser }), 'Sources');
   const tab = { id: 1, index: 0, windowId: 1, incognito: false };
   const search = async (query, source) => plain(await Sources.search(query, { source, tab }));
   return { Sources, calls, tab, search };

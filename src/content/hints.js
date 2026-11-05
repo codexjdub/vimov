@@ -154,10 +154,9 @@ Vimov.hints = (() => {
     }
     const chars = Vimov.state.settings.hintChars;
     const labels = makeLabels(targets.length, chars);
-    const layer = document.createElement('div');
+    const layer = ui.el('div');
     const markers = targets.map((target, i) => {
-      const node = document.createElement('div');
-      node.className = 'hint';
+      const node = ui.el('div', 'hint');
       node.style.left = `${target.rect.left}px`;
       node.style.top = `${target.rect.top}px`;
       node.textContent = labels[i];
@@ -177,10 +176,7 @@ Vimov.hints = (() => {
         marker.node.hidden = !match;
         if (!match) continue;
         matching.push(marker);
-        const done = document.createElement('span');
-        done.className = 'typed';
-        done.textContent = typed;
-        marker.node.replaceChildren(done, marker.label.slice(typed.length));
+        marker.node.replaceChildren(ui.el('span', 'typed', typed), marker.label.slice(typed.length));
       }
       return matching;
     }

@@ -62,8 +62,9 @@ come first, then bookmarks, and pages you've visited often and lately move
 up.
 
 With nothing typed, `o` lists your five most recently used tabs, then your
-most visited sites (the ones on Firefox's new-tab page), then your other tabs.
-In a private window it lists only your private tabs.
+most visited sites (the ones on Firefox's new-tab page), then your other tabs
+if there's room: 10 results in all. In a private window it lists only your
+private tabs.
 
 - Ctrl+J and Ctrl+K (or Tab and Shift+Tab, or the arrow keys) move down and
   up the results.

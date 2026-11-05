@@ -8,7 +8,7 @@ Vimov.search = (() => {
   const { ui } = Vimov;
   const { el } = ui;
   const TAGS = { tab: 'Tab', bookmark: 'Bookmark', folder: 'Folder', history: 'History', site: 'Site', web: 'Search', url: 'Open' };
-  const SYMBOLS = new Set(['*', '%', '^', '?']);
+  const isSymbol = (word) => Object.hasOwn(Vimov.SEARCH_SYMBOLS, word);
   const CONFIRM_TABS = 10; // a folder with more bookmarks than this asks first
 
   // `text` with the typed words in bold.
@@ -92,7 +92,7 @@ Vimov.search = (() => {
     let pending = null; // the request for what's in the box now, until it's answered
     let chosen = false;
 
-    const typedWords = () => input.value.trim().split(/\s+/).filter((w) => w && !SYMBOLS.has(w));
+    const typedWords = () => input.value.trim().split(/\s+/).filter((w) => w && !isSymbol(w));
 
     function showFooter() {
       if (confirming) footer.replaceChildren(hint('Enter', `again to open ${confirming.count} tabs`));

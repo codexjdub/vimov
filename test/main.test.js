@@ -7,7 +7,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { SHARED, load, run, event } = require('./helpers');
 
-async function setup() {
+async function setup(stored = {}) {
   const listeners = {};
   const body = { localName: 'body' };
   const field = { localName: 'input', blur() {} };
@@ -15,7 +15,7 @@ async function setup() {
   const ran = [];
   const ctx = load(SHARED, {
     browser: {
-      storage: { sync: { get: async (defaults) => defaults }, onChanged: event() },
+      storage: { sync: { get: async (defaults) => ({ ...defaults, ...stored }) }, onChanged: event() },
       runtime: { onMessage: event(), sendMessage: async () => ({}) },
     },
     location: { href: 'https://example.com/' },
@@ -79,4 +79,14 @@ test('a key whose keyup went to another tab doesn\'t swallow its next press', as
   const down = fire('keydown', 'k', 'KeyK');
   const keypress = fire('keypress', 'k', 'KeyK');
   assert.deepStrictEqual([down.prevented, keypress.prevented, keypress.stopped], [false, false, false]);
+});
+
+test('keys passed through to a site reach it, digits included', async () => {
+  const { press, ran } = await setup({ exclusions: 'example.com 3 f' });
+  const [three] = press('3', 'Digit3');
+  const [f] = press('f', 'KeyF');
+  press('j', 'KeyJ');
+  assert.deepStrictEqual([three.prevented, three.stopped, f.prevented], [false, false, false]);
+  // 3 went to the page, so it isn't a count for j.
+  assert.deepStrictEqual(ran, ['scrollDown:1']);
 });

@@ -55,7 +55,9 @@ Vimov.help = (() => {
 
     const mode = {
       name: 'help',
-      onKey(key) {
+      onKey(key, event) {
+        // Let browser shortcuts through.
+        if (event?.ctrlKey || event?.metaKey) return false;
         const scrollKeys = { j: 60, k: -60, d: panel.clientHeight / 2, u: -panel.clientHeight / 2 };
         if (key === '<esc>' || key === '?') Vimov.mode.exit(mode);
         else if (key in scrollKeys) panel.scrollBy({ top: scrollKeys[key] });

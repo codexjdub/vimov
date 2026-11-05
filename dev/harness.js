@@ -132,7 +132,6 @@
 
   const manifest = await (await fetch('../manifest.json')).json();
   const [scripts] = manifest.content_scripts;
-  await load('src/sources.js');
   for (const href of scripts.css) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -140,5 +139,7 @@
     document.head.append(link);
   }
   for (const src of scripts.js) await load(src);
+  // After the shared scripts, which sources.js uses, as in the background page.
+  await load('src/sources.js');
   document.documentElement.dataset.harness = 'ready';
 })();

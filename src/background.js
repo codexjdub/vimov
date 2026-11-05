@@ -79,12 +79,15 @@ browser.omnibox.setDefaultSuggestion({ description: 'Vimov: search tabs, bookmar
 
 browser.omnibox.onInputChanged.addListener(async (text, suggest) => {
   const id = ++typedCount;
-  const results = (await Sources.search(text, { tab: await activeTab() })).filter((r) => r.url);
+  const results = await Sources.search(text, { tab: await activeTab() });
   // A search for earlier text that finishes after a later one would replace
   // the suggestions on screen with stale ones.
   if (id !== typedCount) return;
-  suggested = new Map(results.map((r) => [r.url, r]));
-  suggest(results.map((r) => ({ content: r.url, description: describe(r) })));
+  // Firefox says which suggestion was picked only by its URL, so each URL is
+  // offered once, as its best result (two tabs on one page: the first).
+  suggested = new Map();
+  for (const r of results) if (r.url && !suggested.has(r.url)) suggested.set(r.url, r);
+  suggest([...suggested.values()].map((r) => ({ content: r.url, description: describe(r) })));
 });
 
 // Enter on a suggestion opens it; Enter on typed text opens the best result,

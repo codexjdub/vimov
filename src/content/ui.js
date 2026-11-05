@@ -204,9 +204,15 @@ Vimov.ui = (() => {
     }
   `;
 
+  // Elements are made as HTML even in an SVG or XML document, where
+  // createElement() would make plain XML elements that can't hold a shadow
+  // root or take styles. (SVG doesn't draw HTML, so the UI isn't seen there,
+  // but keys keep working.)
+  const make = (tag) => document.createElementNS('http://www.w3.org/1999/xhtml', tag);
+
   // An element with an optional class and text, for building the overlays.
   function el(tag, className, text) {
-    const node = document.createElement(tag);
+    const node = make(tag);
     if (className) node.className = className;
     if (text) node.textContent = text;
     return node;
@@ -219,10 +225,19 @@ Vimov.ui = (() => {
   let message = '';
   let messageTimer = 0;
 
+  // An open modal dialog or fullscreen element covers the rest of the page
+  // and stops it taking focus, so the UI goes inside the topmost one. Not
+  // inside a video or other element that can't show children, though.
+  const NO_CHILDREN = new Set(['video', 'audio', 'img', 'canvas', 'iframe', 'embed', 'object']);
+  function container() {
+    const covering = [...document.querySelectorAll(':modal')].filter((node) => !NO_CHILDREN.has(node.localName));
+    return covering.at(-1) || document.documentElement;
+  }
+
   function getRoot() {
     if (!host) {
-      host = document.createElement('vimov-ui');
-      host.style.cssText = [
+      const node = make('vimov-ui');
+      node.style.cssText = [
         'all: initial !important',
         'display: block !important',
         'position: fixed !important',
@@ -232,16 +247,17 @@ Vimov.ui = (() => {
         'height: 0 !important',
         'z-index: 2147483647 !important',
       ].join(';');
-      root = host.attachShadow({ mode: 'closed' });
-      const style = document.createElement('style');
-      style.textContent = CSS;
-      hud = document.createElement('div');
-      hud.className = 'hud';
-      hud.hidden = true;
-      root.append(style, hud);
+      const shadow = node.attachShadow({ mode: 'closed' });
+      const line = el('div', 'hud');
+      line.hidden = true;
+      shadow.append(el('style', '', CSS), line);
+      // Kept only once it's all built, so a failure can be retried.
+      [host, root, hud] = [node, shadow, line];
     }
-    // Some pages rebuild their DOM wholesale; put the host back if it was dropped.
-    if (!host.isConnected) document.documentElement.append(host);
+    // Put the host back if the page dropped it (some rebuild their DOM
+    // wholesale), and move it in or out of a dialog that opened or closed.
+    const parent = container();
+    if (host.parentNode !== parent) parent.append(host);
     return root;
   }
 
@@ -255,6 +271,8 @@ Vimov.ui = (() => {
   return {
     el,
     root: getRoot,
+    // Whether a node is Vimov's own UI, as the page sees it.
+    owns: (node) => !!host && node === host,
 
     // The persistent HUD text: the current mode or the keys typed so far.
     setStatus(text) {
@@ -276,16 +294,15 @@ Vimov.ui = (() => {
     // Briefly outlines a rectangle, to show what a command acted on.
     flash(rect) {
       if (!rect) return;
-      const el = document.createElement('div');
-      el.className = 'flash';
-      Object.assign(el.style, {
+      const box = el('div', 'flash');
+      Object.assign(box.style, {
         left: `${rect.left}px`,
         top: `${rect.top}px`,
         width: `${rect.right - rect.left}px`,
         height: `${rect.bottom - rect.top}px`,
       });
-      getRoot().append(el);
-      setTimeout(() => el.remove(), 340);
+      getRoot().append(box);
+      setTimeout(() => box.remove(), 340);
     },
   };
 })();

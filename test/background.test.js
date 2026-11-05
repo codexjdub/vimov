@@ -81,6 +81,18 @@ test('address-bar suggestions from a late, older search are dropped', async () =
   assert.deepStrictEqual(plain(opened.map(([result]) => result.type)), ['tab']);
 });
 
+test('address-bar suggestions offer each URL once, as its best result', async () => {
+  const first = { type: 'tab', id: 7, windowId: 1, url: 'https://example.com/', title: 'Example A' };
+  const second = { type: 'tab', id: 8, windowId: 2, url: 'https://example.com/', title: 'Example B' };
+  const search = { type: 'web', engine: 'Google', query: 'example', title: 'example' };
+  const { browser, opened } = setup({ search: async () => [first, search, second] });
+  let shown = [];
+  await browser.omnibox.onInputChanged.fire('example', (suggestions) => (shown = plain(suggestions)));
+  assert.deepStrictEqual(shown.map((s) => s.content), ['https://example.com/']);
+  await browser.omnibox.onInputEntered.fire(shown[0].content, 'currentTab');
+  assert.deepStrictEqual(opened.map(([result]) => result.id), [7]);
+});
+
 test('address-bar results opened in a background tab stay in the background', async () => {
   const result = { type: 'bookmark', url: 'https://plan.example.com/', title: 'Plan' };
   const { browser, opened } = setup({ search: async () => [result] });

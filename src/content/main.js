@@ -109,6 +109,12 @@
       return;
     }
 
+    // Before counts, so digits passed through (a video's seek keys) reach the page.
+    if (!pending.length && rule?.passKeys.has(key)) {
+      resetPending();
+      return;
+    }
+
     const { bindings, prefixes } = state.keymap;
 
     const startsCount = count || key !== '0';
@@ -116,11 +122,6 @@
       count = String(Math.min(Number(count + key), MAX_COUNT));
       showPending();
       block(event, 'consume');
-      return;
-    }
-
-    if (!pending.length && rule?.passKeys.has(key)) {
-      resetPending();
       return;
     }
 

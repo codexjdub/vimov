@@ -22,6 +22,8 @@ globalThis.Vimov = globalThis.Vimov || {};
     bookmarks: 'Search bookmarks',
     history: 'Search history',
   };
+  // Words that limit the vbar to one source, as in Firefox's address bar.
+  const SEARCH_SYMBOLS = { '*': 'bookmarks', '%': 'tabs', '^': 'history', '?': 'web' };
 
   // `options` maps option names to types: an array lists the allowed values,
   // otherwise 'boolean', 'number' or 'string'. `required` lists options a
@@ -102,6 +104,7 @@ globalThis.Vimov = globalThis.Vimov || {};
 
   Vimov.COMMANDS = COMMANDS;
   Vimov.SEARCH_SOURCES = SEARCH_SOURCES;
+  Vimov.SEARCH_SYMBOLS = SEARCH_SYMBOLS;
   Vimov.CATEGORIES = ['Scrolling', 'Page', 'Links', 'Find', 'Search', 'Tabs', 'Other'];
 
   Vimov.describeCommand = (name, options = {}) => {

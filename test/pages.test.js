@@ -37,6 +37,27 @@ test('headlines and "read more" links aren\'t pages', () => {
   assert.strictEqual(pick([...links, link('More')], 'next'), 4);
 });
 
+test('a single arrow beats a double one, which goes to the first or last page', () => {
+  const labels = (...texts) => texts.map((t) => link(t));
+  const arrows = labels('«', '‹', '1', '2', '3', '›', '»');
+  assert.strictEqual(pick(arrows, 'previous'), 1);
+  assert.strictEqual(pick(arrows, 'next'), 5);
+  assert.strictEqual(pick(labels('« First', '‹ Prev', '1', '2', 'Next ›', 'Last »'), 'previous'), 1);
+  const ascii = labels('<< First', '< Back', '1', '2', 'Onward >', 'Last >>');
+  assert.strictEqual(pick(ascii, 'previous'), 1);
+  assert.strictEqual(pick(ascii, 'next'), 4);
+  // A double arrow still counts when there's no single one.
+  assert.strictEqual(pick(labels('«', '1', '2', '»'), 'previous'), 0);
+  assert.strictEqual(pick(labels('«', '1', '2', '»'), 'next'), 3);
+});
+
+test('the word has to end: Next.js and Next-gen aren\'t the next page', () => {
+  assert.strictEqual(pick([link('Next.js'), link('Next-gen phones'), link('Nextcloud'), link('Next')], 'next'), 3);
+  assert.strictEqual(pick([link('Next: Chapter 3')], 'next'), 0);
+  assert.strictEqual(pick([link('Prev. page')], 'previous'), 0);
+  assert.strictEqual(pick([link('Previews'), link('Older')], 'previous'), 1);
+});
+
 test('Chinese next and previous links, the page before the chapter', () => {
   const links = [link('首页'), link('上一章'), link('上一页'), link('下一页'), link('下一章'), link('尾页')];
   assert.strictEqual(pick(links, 'next'), 3);

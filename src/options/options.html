@@ -52,7 +52,7 @@ unmap x"></textarea>
 
     <section>
       <h2>Excluded sites</h2>
-      <p>One rule per line: a URL pattern, then optionally the keys to pass through to the page. With no keys, Vimov is off on matching pages. <code>*</code> matches anything; a pattern without <code>https://</code> covers the whole site.</p>
+      <p>One rule per line: a URL pattern, then optionally the keys to pass through to the page. With no keys, Vimov is off on matching pages. <code>*</code> matches anything within the site name or within the path, as in <code>*.youtube.com</code>; a pattern without a path covers the whole site, and <code>*</code> on its own every site.</p>
       <textarea id="exclusions" rows="4" spellcheck="false" placeholder="mail.google.com
 *.youtube.com f j k l
 https://docs.google.com/*"></textarea>

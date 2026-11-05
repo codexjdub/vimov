@@ -90,6 +90,17 @@ test('exclusion patterns', () => {
     ['https://example.com/', 'https://example.com/x', false],
     ['google.*', 'https://google.co.uk/', true],
     ['*', 'https://anything.example/', true],
+    ['*', 'http://localhost:8080/a?b#c', true],
+    ['https://example.com', 'https://example.com/x', true],
+    ['https://example.com', 'http://example.com/', false],
+    ['*://example.com/*', 'http://example.com/x', true],
+    // A star stays within its part, so another site naming this one in its
+    // URL isn't excluded.
+    ['mail.google.com', 'https://web.archive.org/web/2024/https://mail.google.com/mail/', false],
+    ['mail.google.com', 'https://www.google.com/search?q=https://mail.google.com', false],
+    ['*.youtube.com', 'https://example.com/a.youtube.com', false],
+    ['*.youtube.com', 'https://www.youtube.com/watch?v=x', true],
+    ['google.*', 'https://example.com/google.com', false],
   ];
   for (const [pattern, url, excluded] of cases) {
     const { rules } = Vimov.keys.parseExclusions(pattern);
@@ -124,4 +135,27 @@ test('the toolbar button adds or removes the host on its own line', () => {
   assert.strictEqual(toggle('# mine\nmail.google.com j k\n\n', 'example.com'), '# mine\nmail.google.com j k\nexample.com');
   assert.strictEqual(toggle('a.com\nexample.com\nb.com', 'example.com'), 'a.com\nb.com');
   assert.strictEqual(toggle('  Example.com  \nexample.com j', 'example.com'), 'example.com j');
+});
+
+test('keys pressed with Ctrl or Alt, on any layout', () => {
+  const key = (key, code, mods = {}) => Vimov.keys.fromEvent({
+    key, code, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, getModifierState: () => false, ...mods,
+  });
+  const ctrl = { ctrlKey: true };
+  assert.strictEqual(key('j', 'KeyJ', ctrl), '<c-j>');
+  // Dvorak's J and AZERTY's A sit where QWERTY has C and Q.
+  assert.strictEqual(key('j', 'KeyC', ctrl), '<c-j>');
+  assert.strictEqual(key('a', 'KeyQ', ctrl), '<c-a>');
+  // Shift makes a capital; Caps Lock doesn't.
+  assert.strictEqual(key('D', 'KeyD', { ctrlKey: true, shiftKey: true }), '<c-D>');
+  assert.strictEqual(key('J', 'KeyJ', ctrl), '<c-j>');
+  // Option+P types π on a Mac, and a Russian layout types о where J is:
+  // both are read from the physical key.
+  assert.strictEqual(key('π', 'KeyP', { altKey: true }), '<a-p>');
+  assert.strictEqual(key('о', 'KeyJ', ctrl), '<c-j>');
+  assert.strictEqual(key('!', 'Digit1', { ctrlKey: true, shiftKey: true }), '<c-1>');
+  assert.strictEqual(key('Dead', 'KeyE', { altKey: true }), '<a-e>');
+  // Without a modifier, the character typed.
+  assert.strictEqual(key('J', 'KeyJ', { shiftKey: true }), 'J');
+  assert.strictEqual(key('$', 'Digit4', { shiftKey: true }), '$');
 });

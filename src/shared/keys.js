@@ -53,10 +53,16 @@ Vimov.keys = (() => {
     let base = EVENT_NAMES[e.key] || (FUNCTION_KEY.test(e.key) ? e.key.toLowerCase() : null);
     const named = base !== null;
     if (!named) {
-      // With Alt or Ctrl, e.key can be a composed character (Option+P types
-      // "π" on a Mac) or "Dead", so use the physical key instead.
-      const physical = (alt || ctrl) && /^(?:Key([A-Z])|Digit(\d))$/.exec(e.code);
+      // With Alt or Ctrl, a plain Latin letter or digit is taken as typed, so
+      // Ctrl+J is <c-j> on Dvorak and AZERTY too; Shift, not Caps Lock, makes
+      // it a capital. Anything else, such as a composed character (Option+P
+      // types "π" on a Mac), "Dead", or a letter of another alphabet, is
+      // read from the physical key instead.
+      const mod = alt || ctrl;
+      const latin = /^[a-z0-9]$/i.test(e.key);
+      const physical = mod && !latin && /^(?:Key([A-Z])|Digit(\d))$/.exec(e.code);
       if (physical) base = physical[1] ? (e.shiftKey ? physical[1] : physical[1].toLowerCase()) : physical[2];
+      else if (mod && latin) base = e.shiftKey ? e.key.toUpperCase() : e.key.toLowerCase();
       else if (isChar(e.key)) base = e.key;
       else return null;
     }
@@ -208,9 +214,15 @@ Vimov.keys = (() => {
   }
 
   // Exclusion rules: one per line, a URL pattern then optional keys to pass
-  // through to the page. "*" matches anything. A pattern without a scheme
-  // matches from the host onwards: "mail.google.com" covers that whole site
-  // (but not mail.google.community), "github.com/me" everything under it.
+  // through to the page. "*" matches anything within its part of the URL:
+  // the scheme, the host or the path, so "mail.google.com" doesn't match a
+  // page whose own URL merely contains it (an archived copy, a search for
+  // it). A pattern without a path covers the whole site: "mail.google.com"
+  // (but not mail.google.community), "*" every site. One without a scheme
+  // also covers everything under its path: "github.com/me".
+  const STARS = { scheme: '[a-z0-9+.-]*', host: '[^/?#]*', path: '.*' };
+  const glob = (part, star) => part.split('*').map(escapeRegExp).join(star);
+
   function parseExclusions(text = '') {
     const rules = [];
     const errors = [];
@@ -218,11 +230,17 @@ Vimov.keys = (() => {
       const [pattern, ...pass] = line.split(/\s+/);
       try {
         const hasScheme = pattern.includes('://');
-        const glob = hasScheme ? pattern : `*://${pattern}`;
+        const full = hasScheme ? pattern : `*://${pattern}`;
+        const at = full.indexOf('://');
+        const after = full.slice(at + 3);
+        const cut = after.search(/[/?#]/);
+        const host = cut === -1 ? after : after.slice(0, cut);
+        const path = cut === -1 ? '' : after.slice(cut);
         let rest = '';
-        if (!hasScheme && !glob.endsWith('*')) rest = pattern.includes('/') ? '.*' : '(?::\\d+)?(?:[/?#].*)?';
-        const re = new RegExp(`^${glob.split('*').map(escapeRegExp).join('.*')}${rest}$`, 'i');
-        rules.push({ pattern, re, passKeys: new Set(pass.flatMap(parse)) });
+        if (!path) rest = '(?::\\d+)?(?:[/?#].*)?';
+        else if (!hasScheme && !path.endsWith('*')) rest = '.*';
+        const source = `^${glob(full.slice(0, at), STARS.scheme)}://${glob(host, STARS.host)}${glob(path, STARS.path)}${rest}$`;
+        rules.push({ pattern, re: new RegExp(source, 'i'), passKeys: new Set(pass.flatMap(parse)) });
       } catch (err) {
         errors.push({ line: number, message: err.message });
       }

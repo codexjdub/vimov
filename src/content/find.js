@@ -164,14 +164,12 @@ Vimov.find = (() => {
     };
     const index = textIndex();
 
-    const bar = document.createElement('div');
-    bar.className = 'find';
-    const input = document.createElement('input');
+    const bar = ui.el('div', 'find');
+    const input = ui.el('input');
     input.spellcheck = false;
     input.autocomplete = 'off';
     input.setAttribute('aria-label', 'Find in page');
-    const counter = document.createElement('span');
-    counter.className = 'count';
+    const counter = ui.el('span', 'count');
     bar.append(input, counter);
     ui.root().append(bar);
 
@@ -281,12 +279,13 @@ Vimov.find = (() => {
     if (cached?.query !== query) {
       forget();
       cached = { query, matches: search(query) };
-      // New or changed text, or something shown or hidden, makes them stale.
+      // New or changed text, or something shown or hidden (a <details> opened
+      // or closed), makes them stale.
       changes.observe(document, {
         subtree: true,
         childList: true,
         characterData: true,
-        attributeFilter: ['class', 'style', 'hidden'],
+        attributeFilter: ['class', 'style', 'hidden', 'open'],
       });
     }
     return cached.matches;

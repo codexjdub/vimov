@@ -7,24 +7,34 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { load, run } = require('./helpers');
 
-function setup() {
-  const page = {
-    scrollTop: 0, scrollHeight: 20000, clientHeight: 800,
+// A scrolling box: the page, or an element with `overflow` (auto, hidden…).
+function box({ height = 20000, overflow = 'visible', ...rest } = {}) {
+  return {
+    isConnected: true, nodeType: 1,
+    scrollTop: 0, scrollHeight: height, clientHeight: 800,
     scrollLeft: 0, scrollWidth: 1000, clientWidth: 1000,
+    computed: { overflowX: overflow, overflowY: overflow },
     scrollBy({ top = 0, left = 0 }) {
       this.scrollTop += top;
       this.scrollLeft += left;
     },
     scrollTo() {},
+    ...rest,
   };
+}
+
+function setup({ page = box(), elements = [] } = {}) {
   const listeners = {};
   let frames = new Map();
   let nextFrame = 1;
   let now = 0;
   const ctx = load([], {
-    Vimov: { dom: { deepActiveElement: () => null, deepElementFromPoint: () => null, flatParent: () => null } },
-    document: { scrollingElement: page, documentElement: page, body: {}, querySelectorAll: () => [] },
-    getComputedStyle: () => ({ overflowX: 'visible', overflowY: 'visible' }),
+    Vimov: {
+      dom: { deepActiveElement: () => null, deepElementFromPoint: () => null, flatParent: () => null },
+      ui: { owns: (node) => node?.vimov === true },
+    },
+    document: { scrollingElement: page, documentElement: page, body: box({ height: 0 }), querySelectorAll: () => elements },
+    getComputedStyle: (el) => el.computed,
     innerWidth: 1000,
     innerHeight: 800,
     addEventListener: (type, fn) => (listeners[type] ||= []).push(fn),
@@ -129,4 +139,38 @@ test('scroll commands step on a press and glide while held', () => {
     ['glide', 'x', -1, 900, 'KeyH'],
     ['by', 'y', -60, false],
   ]);
+});
+
+const pressed = (node) => ({ isTrusted: true, composedPath: () => [node] });
+
+test('scrolling starts where focus moved after the last click', () => {
+  const modal = box({ height: 3000, overflow: 'auto' });
+  const button = box({ height: 0 });
+  const { ctx, page, fire } = setup();
+  fire('mousedown', pressed(button));
+  fire('focusin', pressed(modal)); // the modal the button opened focuses itself
+  ctx.Vimov.scroll.by('y', { px: 60 }, false);
+  assert.deepStrictEqual([modal.scrollTop, page.scrollTop], [60, 0]);
+  // Vimov's own boxes taking focus don't move where scrolling starts.
+  fire('focusin', pressed({ vimov: true, isConnected: true, nodeType: 1 }));
+  ctx.Vimov.scroll.by('y', { px: 60 }, false);
+  assert.deepStrictEqual([modal.scrollTop, page.scrollTop], [120, 0]);
+});
+
+test('a page locked with overflow: hidden isn\'t scrolled', () => {
+  const page = box({ overflow: 'hidden' });
+  const modal = box({ height: 3000, overflow: 'auto' });
+  const button = box({ height: 0 });
+  // The click was on the page behind; the largest scroller left is the modal.
+  const first = setup({ page, elements: [button, modal] });
+  first.fire('mousedown', pressed(button));
+  first.ctx.Vimov.scroll.by('y', { px: 60 }, false);
+  first.ctx.Vimov.scroll.to('y', true, false);
+  assert.deepStrictEqual([modal.scrollTop, page.scrollTop], [60, 0]);
+  // With nothing else to scroll, nothing moves.
+  const second = setup({ page });
+  second.ctx.Vimov.scroll.by('y', { px: 60 }, false);
+  second.ctx.Vimov.scroll.glide('y', 1, 900, 'KeyJ');
+  second.frame(10);
+  assert.deepStrictEqual([page.scrollTop, second.pending()], [0, 0]);
 });
