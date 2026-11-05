@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Vimov",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Browse with Vim-style keys: scrolling, link hints, find, one search box for tabs, bookmarks and history, and tab commands.",
   "icons": {
     "48": "icons/vimov.svg",

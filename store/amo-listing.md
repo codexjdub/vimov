@@ -103,6 +103,22 @@ Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.5.1)
+
+```
+Fixes:
+- { goes to the previous page, not the first, on page lists such as « ‹ 1 2 3 › », and a "Next.js" link no longer counts as the next page.
+- With nothing typed, o in a private window lists only your private tabs, not your most visited sites.
+- The vbar, link hints and find work while a page shows a dialog, and j scrolls the dialog rather than the page behind it.
+- Digits you pass through to a site, such as YouTube's seek keys, reach it.
+- An excluded site's pattern matches only that site, not other pages whose address mentions it. A pattern such as https://example.com now covers the whole site.
+- Ctrl and Alt keys follow your keyboard layout, so Ctrl+J and Ctrl+K in the vbar work on Dvorak and AZERTY.
+- Saving the options no longer undoes a change made with the toolbar button.
+- Browser shortcuts work while the help is open.
+- Vimov's keys keep working on SVG images.
+- n finds text in a section you opened after searching.
+```
+
 ## Version notes (0.5.0)
 
 ```
