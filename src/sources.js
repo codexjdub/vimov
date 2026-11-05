@@ -9,9 +9,12 @@ const Sources = (() => {
   // Words that limit a search to one source, as in Firefox's address bar.
   const SYMBOLS = { '*': 'bookmarks', '%': 'tabs', '^': 'history', '?': 'web' };
   // A result ranked at least this high is listed above the web search: a
-  // title or site that starts with the words, or an open tab where a word in
-  // the title does.
+  // title or site that starts with the words, or, for an open tab or a page
+  // used often, a word in the title that does.
   const STRONG = 9;
+  // With nothing typed, o lists this many recently used tabs before the most
+  // visited sites.
+  const RECENT_TABS = 5;
   // Bookmarks and history entries Vimov can open. Bookmarklets (javascript:)
   // and Firefox's place: queries aren't included.
   const OPENABLE = /^https?:\/\//i;
@@ -82,18 +85,44 @@ const Sources = (() => {
     const items = await browser.history.search({ text, startTime: 0, maxResults });
     return items
       .filter((h) => OPENABLE.test(h.url))
-      .map((h) => ({ type: 'history', title: h.title || '', url: h.url, visitCount: h.visitCount || 0 }));
+      .map((h) => ({
+        type: 'history',
+        title: h.title || '',
+        url: h.url,
+        visitCount: h.visitCount || 0,
+        lastVisitTime: h.lastVisitTime || 0,
+      }));
   }
 
-  // What an empty box shows: the most recently used tabs, the newest
-  // bookmarks, or the latest history.
+  // Firefox's most visited sites, as on its new-tab page: one page per site,
+  // ranked by Firefox's own frecency, with the ones you pinned there and
+  // without the ones you removed. Search shortcuts are left out. If Firefox
+  // can't list them, the box still shows your tabs.
+  async function topSites() {
+    try {
+      const sites = await browser.topSites.get({ includePinned: true, limit: MAX_RESULTS });
+      return sites
+        .filter((s) => s.type !== 'search' && OPENABLE.test(s.url))
+        .map((s) => ({ type: 'site', title: s.title || '', url: s.url }));
+    } catch {
+      return [];
+    }
+  }
+
+  // What an empty box shows: the newest bookmarks, the latest history, or the
+  // most recently used tabs. o lists the first few tabs, then the most visited
+  // sites that aren't among them, then the other tabs.
   async function recent(source, tab) {
     if (source === 'web') return [];
     if (source === 'history') return visited('', MAX_RESULTS);
     if (source === 'bookmarks') {
       return (await allBookmarks()).filter((b) => b.type === 'bookmark').sort((a, b) => b.dateAdded - a.dateAdded);
     }
-    return (await openTabs(tab)).sort((a, b) => b.lastAccessed - a.lastAccessed);
+    const [open, sites] = await Promise.all([openTabs(tab), source === 'all' ? topSites() : []]);
+    const tabs = open.sort((a, b) => b.lastAccessed - a.lastAccessed);
+    const first = tabs.slice(0, RECENT_TABS);
+    const listed = new Set([tab?.url, ...first.map((t) => t.url)]);
+    return [...first, ...sites.filter((s) => !listed.has(s.url)), ...tabs.slice(RECENT_TABS)];
   }
 
   // The URL a typed word stands for, if it looks like an address.
@@ -171,12 +200,21 @@ const Sources = (() => {
     return total / words.length;
   }
 
-  // Breaks near-ties: open tabs first, then pages visited often, then bookmarks.
-  function bonus(item) {
-    if (item.type === 'tab') return 2;
-    if (item.type === 'history') return Math.min(1.5, Math.log10(item.visitCount || 1) / 1.5);
-    return 1;
-  }
+  // How much a page is used, as Tridactyl's "frecency" counts it: its visits,
+  // scaled down once the last visit is more than 90 days old. Firefox's own
+  // frecency weighs each visit, but extensions only see the count and the
+  // latest one.
+  const NINETY_DAYS = 90 * 24 * 60 * 60 * 1000;
+  const frecency = ({ visitCount, lastVisitTime }, now) =>
+    visitCount * Math.min(1, NINETY_DAYS / Math.max(1, now - lastVisitTime));
+
+  // Breaks near-ties: open tabs first, then bookmarks, and pages used often
+  // and lately above the rest. Usage adds 2 at most (about 1000 recent
+  // visits), so it can't lift a page with the words only somewhere in its
+  // title above one whose title starts with them.
+  const TYPE_BONUS = { tab: 2, bookmark: 1, folder: 1 };
+  const MAX_USAGE = 2;
+  const bonus = (item, usage) => (TYPE_BONUS[item.type] || 0) + Math.min(MAX_USAGE, Math.log10(1 + usage) / 1.5);
 
   // Results for the typed text, best first. `source` is 'all', 'tabs',
   // 'bookmarks', 'history' or 'web'; a symbol in the text overrides it.
@@ -191,19 +229,23 @@ const Sources = (() => {
     if (!typed.length) return (await recent(source, tab)).slice(0, MAX_RESULTS);
 
     // Every source at once, so a keystroke waits for the slowest lookup
-    // rather than all of them in turn.
+    // rather than all of them in turn. History is looked up for tabs and
+    // bookmarks too, for how much their pages are used; it only finds pages
+    // with the longest word in their title or URL.
     const longest = typed.reduce((a, b) => (b.length > a.length ? b : a));
     const [engines, tabs, bookmarks, history] = await Promise.all([
       wants('web') ? browser.search.get() : [],
       wants('tabs') ? openTabs(tab) : [],
       wants('bookmarks') ? allBookmarks() : [],
-      wants('history') ? visited(longest, 500) : [],
+      source !== 'web' ? visited(longest, 500) : [],
     ]);
     const keyword = typed.length > 1 ? engineFor(typed[0], engines) : null;
     if (keyword) return [webSearch(keyword, typed.slice(1).join(' '))];
 
     const words = terms(typed.map((w) => w.toLowerCase()));
-    const items = [...tabs, ...bookmarks, ...history];
+    const now = Date.now();
+    const usage = new Map(history.map((h) => [h.url, frecency(h, now)]));
+    const items = [...tabs, ...bookmarks, ...(wants('history') ? history : [])];
 
     // A page that's open, or bookmarked, is listed once: as the tab, then as
     // the bookmark. Items come in that order.
@@ -214,7 +256,7 @@ const Sources = (() => {
       const score = match(item, words);
       if (!score) continue;
       if (item.url) seen.add(item.url);
-      ranked.push({ item, score, rank: score + bonus(item) });
+      ranked.push({ item, score, rank: score + bonus(item, usage.get(item.url) || 0) });
     }
     ranked.sort((a, b) => b.rank - a.rank);
 

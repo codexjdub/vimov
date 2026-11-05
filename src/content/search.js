@@ -7,7 +7,7 @@
 Vimov.search = (() => {
   const { ui } = Vimov;
   const { el } = ui;
-  const TAGS = { tab: 'Tab', bookmark: 'Bookmark', folder: 'Folder', history: 'History', web: 'Search', url: 'Open' };
+  const TAGS = { tab: 'Tab', bookmark: 'Bookmark', folder: 'Folder', history: 'History', site: 'Site', web: 'Search', url: 'Open' };
   const SYMBOLS = new Set(['*', '%', '^', '?']);
   const CONFIRM_TABS = 10; // a folder with more bookmarks than this asks first
 

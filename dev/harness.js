@@ -14,10 +14,11 @@
   };
   const stored = () => JSON.parse(localStorage.getItem('vimov-harness-settings') || '{}');
 
-  // Made-up tabs, bookmarks, history and search engines for the vbar.
+  // Made-up tabs, bookmarks, history, top sites and search engines for the vbar.
   // src/sources.js runs on them here just as it does in the background page.
   const bookmark = (id, title, url, dateAdded = 0) => ({ id, type: 'bookmark', title, url, dateAdded });
   const folder = (id, title, children) => ({ id, type: 'folder', title, children });
+  const daysAgo = (days) => Date.now() - days * 24 * 60 * 60 * 1000;
   const fake = {
     current: { id: 1, index: 0, windowId: 1, incognito: false },
     tabs: [
@@ -44,10 +45,16 @@
       ]),
     ],
     history: [
-      { url: 'https://www.youtube.com/watch?v=cats', title: 'Funny cats compilation', visitCount: 3 },
-      { url: 'https://news.ycombinator.com/', title: 'Hacker News', visitCount: 120 },
-      { url: 'https://www.wikipedia.org/', title: 'Wikipedia', visitCount: 40 },
-      { url: 'https://github.com/codexjdub/vimov/pulls', title: 'Pull requests · codexjdub/vimov', visitCount: 6 },
+      { url: 'https://www.youtube.com/watch?v=cats', title: 'Funny cats compilation', visitCount: 3, lastVisitTime: daysAgo(2) },
+      { url: 'https://news.ycombinator.com/', title: 'Hacker News', visitCount: 120, lastVisitTime: daysAgo(1) },
+      { url: 'https://www.wikipedia.org/', title: 'Wikipedia', visitCount: 40, lastVisitTime: daysAgo(30) },
+      { url: 'https://github.com/codexjdub/vimov/pulls', title: 'Pull requests · codexjdub/vimov', visitCount: 6, lastVisitTime: daysAgo(3) },
+    ],
+    topSites: [
+      { type: 'url', title: 'Hacker News', url: 'https://news.ycombinator.com/' },
+      { type: 'url', title: 'codexjdub/vimov', url: 'https://github.com/codexjdub/vimov' },
+      { type: 'search', title: '@amazon', url: 'https://www.amazon.com/' },
+      { type: 'url', title: 'Wikipedia', url: 'https://www.wikipedia.org/' },
     ],
     engines: [
       { name: 'Google', isDefault: true },
@@ -104,6 +111,7 @@
       },
     },
     search: { get: async () => fake.engines },
+    topSites: { get: async () => fake.topSites },
     storage: {
       sync: {
         get: async (defaults) => ({ ...defaults, ...stored() }),

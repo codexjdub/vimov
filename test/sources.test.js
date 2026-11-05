@@ -38,10 +38,23 @@ const TREE = [
   ]),
 ];
 
+const DAY = 24 * 60 * 60 * 1000;
+const ago = (days) => Date.now() - days * DAY;
+
 const HISTORY = [
-  { url: 'https://www.youtube.com/watch?v=cats', title: 'Funny cats compilation', visitCount: 3 },
-  { url: 'https://news.ycombinator.com/', title: 'Hacker News', visitCount: 120 },
-  { url: 'https://www.wikipedia.org/', title: 'Wikipedia', visitCount: 40 },
+  { url: 'https://www.youtube.com/watch?v=cats', title: 'Funny cats compilation', visitCount: 3, lastVisitTime: ago(2) },
+  { url: 'https://news.ycombinator.com/', title: 'Hacker News', visitCount: 120, lastVisitTime: ago(1) },
+  { url: 'https://www.wikipedia.org/', title: 'Wikipedia', visitCount: 40, lastVisitTime: ago(30) },
+];
+
+// Firefox's top sites: a search shortcut and an about: page are left out, and
+// codexjdub/vimov is open in a tab.
+const TOP_SITES = [
+  { type: 'url', title: 'Hacker News', url: 'https://news.ycombinator.com/' },
+  { type: 'search', title: '@amazon', url: 'https://www.amazon.com/' },
+  { type: 'url', title: 'codexjdub/vimov', url: 'https://github.com/codexjdub/vimov' },
+  { type: 'url', title: 'Settings', url: 'about:preferences' },
+  { type: 'url', title: 'Wikipedia', url: 'https://www.wikipedia.org/' },
 ];
 
 const ENGINES = [
@@ -68,6 +81,7 @@ function fakeBrowser(overrides = {}) {
       deleteUrl: record('history.deleteUrl'),
     },
     search: { get: async () => ENGINES, search: record('search.search') },
+    topSites: { get: async (options) => (calls.push(['topSites.get', options]), TOP_SITES) },
     ...overrides,
   };
   return { browser, calls };
@@ -83,8 +97,37 @@ function setup(overrides) {
 
 const brief = (results) => results.map((r) => `${r.type}:${r.title}`);
 
-test('empty box lists recent tabs, not this one or private ones', async () => {
+test('empty box lists recent tabs, not this one or private ones, then top sites', async () => {
   const { search } = setup();
+  assert.deepStrictEqual(brief(await search('')), [
+    'tab:Inbox (3) - Mail',
+    'tab:codexjdub/vimov: Vim-style keyboard browsing',
+    'tab:Array.prototype.map() - JavaScript | MDN',
+    'tab:Object.prototype.constructor - JavaScript | MDN',
+    'site:Hacker News',
+    'site:Wikipedia',
+  ]);
+});
+
+test('empty box lists five tabs, then top sites, then the other tabs', async () => {
+  const many = Array.from({ length: 7 }, (_, i) => ({
+    id: 10 + i, windowId: 1, title: `Tab ${i}`, url: `https://t${i}.example.com/`, lastAccessed: 100 - i, incognito: false,
+  }));
+  const { Sources, calls, tab } = setup({ tabs: { query: async () => many } });
+  const titles = async (source, here = tab) => brief(plain(await Sources.search('', { source, tab: here })));
+  assert.deepStrictEqual(await titles('all'), [
+    'tab:Tab 0', 'tab:Tab 1', 'tab:Tab 2', 'tab:Tab 3', 'tab:Tab 4',
+    'site:Hacker News', 'site:codexjdub/vimov', 'site:Wikipedia',
+    'tab:Tab 5', 'tab:Tab 6',
+  ]);
+  assert.deepStrictEqual(plain(calls.find(([name]) => name === 'topSites.get')), ['topSites.get', { includePinned: true, limit: 10 }]);
+  // Not the page you're on, and not in T.
+  assert(!(await titles('all', { ...tab, url: 'https://news.ycombinator.com/' })).includes('site:Hacker News'));
+  assert(!(await titles('tabs')).some((r) => r.startsWith('site:')));
+});
+
+test('empty box still lists tabs when Firefox can\'t list top sites', async () => {
+  const { search } = setup({ topSites: { get: async () => { throw new Error('no top sites'); } } });
   assert.deepStrictEqual((await search('')).map((r) => r.id), [4, 2, 3, 6]);
 });
 
@@ -116,6 +159,39 @@ test('weak matches go below the web search', async () => {
   const results = await search('cats');
   assert.strictEqual(results[0].type, 'web');
   assert(brief(results).includes('history:Funny cats compilation'));
+});
+
+test('a page used often and lately ranks above others that match as well', async () => {
+  const history = [
+    { url: 'https://old.example.com/rust', title: 'Rust book', visitCount: 50, lastVisitTime: ago(720) },
+    { url: 'https://rare.example.com/rust', title: 'Rust blog', visitCount: 1, lastVisitTime: ago(1) },
+    { url: 'https://new.example.com/rust', title: 'Rust docs', visitCount: 50, lastVisitTime: ago(1) },
+  ];
+  const { search } = setup({ history: { search: async () => history } });
+  assert.deepStrictEqual(brief(await search('rust ^')), ['history:Rust docs', 'history:Rust book', 'history:Rust blog']);
+});
+
+test('open tabs and bookmarks rank by their pages\' visits too, in % and * as well', async () => {
+  const history = [
+    { url: TABS[5].url, title: TABS[5].title, visitCount: 30, lastVisitTime: ago(1) },
+    { url: 'https://docs.example.com/7', title: 'Design doc 7', visitCount: 30, lastVisitTime: ago(1) },
+  ];
+  const { search } = setup({ history: { search: async () => history } });
+  assert.deepStrictEqual(brief(await search('% javascript mdn')), [
+    'tab:Object.prototype.constructor - JavaScript | MDN',
+    'tab:Array.prototype.map() - JavaScript | MDN',
+  ]);
+  assert.deepStrictEqual(brief(await search('* design doc')).slice(0, 2), ['bookmark:Design doc 7', 'bookmark:Design doc 1']);
+});
+
+test('much use doesn\'t lift a weaker match above a title that starts with the words', async () => {
+  const history = [
+    { url: 'https://bobcats.example.com/x', title: 'Funny bobcats', visitCount: 100000, lastVisitTime: ago(0) },
+    { url: 'https://videos.example.com/cats', title: 'More cats', visitCount: 100000, lastVisitTime: ago(0) },
+    { url: 'https://example.org/c', title: 'Cats of the world', visitCount: 1, lastVisitTime: ago(400) },
+  ];
+  const { search } = setup({ history: { search: async () => history } });
+  assert.deepStrictEqual(brief(await search('^ cats')), ['history:Cats of the world', 'history:More cats', 'history:Funny bobcats']);
 });
 
 test('every word must match, in any order', async () => {

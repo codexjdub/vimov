@@ -57,7 +57,12 @@ the Reader View button in the address bar, or the back button.
 `o` opens the vbar, one box for everything: open tabs in every window,
 bookmarks and their folders, history, and a web search with your default
 engine. Every word you type has to appear in a result's title, URL or
-folder, in any order.
+folder, in any order. Among results that match about as well, open tabs
+come first, then bookmarks, and pages you've visited often and lately move
+up.
+
+With nothing typed, `o` lists your five most recently used tabs, then your
+most visited sites (the ones on Firefox's new-tab page), then your other tabs.
 
 - Ctrl+J and Ctrl+K (or Tab and Shift+Tab, or the arrow keys) move down and
   up the results.

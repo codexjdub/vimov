@@ -67,7 +67,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
 
 // The address-bar keyword: "v", a space, then the same search as the vbar.
 // Firefox shows suggestions as plain text.
-const TAGS = { tab: 'Tab', bookmark: 'Bookmark', history: 'History' };
+const TAGS = { tab: 'Tab', bookmark: 'Bookmark', history: 'History', site: 'Site' };
 let suggested = new Map(); // suggestion content (its URL) → result
 let typedCount = 0; // input changes so far, to spot answers that arrive late
 

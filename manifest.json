@@ -16,7 +16,7 @@
       }
     }
   },
-  "permissions": ["storage", "sessions", "clipboardRead", "clipboardWrite", "tabs", "bookmarks", "history", "search"],
+  "permissions": ["storage", "sessions", "clipboardRead", "clipboardWrite", "tabs", "bookmarks", "history", "topSites", "search"],
   "background": {
     "scripts": [
       "src/shared/commands.js",
