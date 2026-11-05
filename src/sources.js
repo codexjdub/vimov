@@ -111,14 +111,17 @@ const Sources = (() => {
 
   // What an empty box shows: the newest bookmarks, the latest history, or the
   // most recently used tabs. o lists the first few tabs, then the most visited
-  // sites that aren't among them, then the other tabs.
+  // sites that aren't among them, then the other tabs. A private window gets
+  // only its tabs: Firefox's private new-tab page doesn't show top sites
+  // either, so they don't appear on screen there.
   async function recent(source, tab) {
     if (source === 'web') return [];
     if (source === 'history') return visited('', MAX_RESULTS);
     if (source === 'bookmarks') {
       return (await allBookmarks()).filter((b) => b.type === 'bookmark').sort((a, b) => b.dateAdded - a.dateAdded);
     }
-    const [open, sites] = await Promise.all([openTabs(tab), source === 'all' ? topSites() : []]);
+    const listSites = source === 'all' && !tab?.incognito;
+    const [open, sites] = await Promise.all([openTabs(tab), listSites ? topSites() : []]);
     const tabs = open.sort((a, b) => b.lastAccessed - a.lastAccessed);
     const first = tabs.slice(0, RECENT_TABS);
     const listed = new Set([tab?.url, ...first.map((t) => t.url)]);

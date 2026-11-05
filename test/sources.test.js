@@ -126,6 +126,13 @@ test('empty box lists five tabs, then top sites, then the other tabs', async () 
   assert(!(await titles('tabs')).some((r) => r.startsWith('site:')));
 });
 
+test('empty box in a private window lists private tabs, not top sites', async () => {
+  const { Sources, calls } = setup();
+  const here = { id: 7, index: 0, windowId: 3, incognito: true };
+  assert.deepStrictEqual(brief(plain(await Sources.search('', { source: 'all', tab: here }))), ['tab:Private tab']);
+  assert(!calls.some(([name]) => name === 'topSites.get'));
+});
+
 test('empty box still lists tabs when Firefox can\'t list top sites', async () => {
   const { search } = setup({ topSites: { get: async () => { throw new Error('no top sites'); } } });
   assert.deepStrictEqual((await search('')).map((r) => r.id), [4, 2, 3, 6]);
