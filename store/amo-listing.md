@@ -103,6 +103,12 @@ Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.5.0)
+
+```
+The vbar (the search box on o) now ranks by use: among results that match about as well, pages you visit often and lately come first, open tabs and bookmarks included. With nothing typed, o lists your five most recently used tabs, then your most visited sites from Firefox's new-tab page, then your other tabs. For this, Vimov now asks for Firefox's top sites, which Firefox describes as access to your browsing history, as it already does for Vimov's history search.
+```
+
 ## Version notes (0.4.2)
 
 ```
