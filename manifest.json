@@ -27,6 +27,7 @@
     ]
   },
   "action": {
+    "default_area": "navbar",
     "default_title": "Vimov",
     "default_icon": {
       "48": "icons/vimov.svg",
