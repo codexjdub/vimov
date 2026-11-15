@@ -11,9 +11,10 @@ async function setup(stored = {}) {
   const listeners = {};
   const body = { localName: 'body' };
   const field = { localName: 'input', blur() {} };
-  const page = { active: body };
+  const page = { active: body, viewer: false };
   const ran = [];
   const ctx = load(SHARED, {
+    document: { querySelector: (selector) => (page.viewer && selector === 'largitude-popup:popover-open' ? {} : null) },
     browser: {
       storage: { sync: { get: async (defaults) => ({ ...defaults, ...stored }) }, onChanged: event() },
       runtime: { onMessage: event(), sendMessage: async () => ({}) },
@@ -89,4 +90,19 @@ test('keys passed through to a site reach it, digits included', async () => {
   assert.deepStrictEqual([three.prevented, three.stopped, f.prevented], [false, false, false]);
   // 3 went to the page, so it isn't a count for j.
   assert.deepStrictEqual(ran, ['scrollDown:1']);
+});
+
+test('keys are left to Largitude while its popup is open', async () => {
+  const { press, page, ran } = await setup();
+  page.viewer = true;
+  const [question] = press('?', 'Slash', { shiftKey: true });
+  const [r] = press('r', 'KeyR');
+  press('z', 'KeyZ');
+  assert.deepStrictEqual(ran, []);
+  assert.deepStrictEqual([question.prevented, question.stopped, r.prevented, r.stopped], [false, false, false, false]);
+  // Once it closes, the keys are Vimov's again, with no z left half typed.
+  page.viewer = false;
+  press('H', 'KeyH', { shiftKey: true });
+  press('?', 'Slash', { shiftKey: true });
+  assert.deepStrictEqual(ran, ['goBack:1', 'showHelp:1']);
 });

@@ -49,6 +49,12 @@
     showPending();
   }
 
+  // Largitude, an image-viewer extension, has keys of its own while its
+  // popup is open (? lists them, o opens the image, r turns it, f flips it).
+  // Its key listener runs after Vimov's, so Vimov leaves every key to the
+  // page until the popup closes.
+  const viewerOpen = () => !!document.querySelector('largitude-popup:popover-open');
+
   function block(event, how) {
     if (how === 'consume') event.preventDefault();
     event.stopImmediatePropagation();
@@ -86,6 +92,11 @@
     if (modal) {
       if (modal.onKey(key, event)) block(event, 'consume');
       else if (modal.shield !== false) block(event, 'shield');
+      return;
+    }
+
+    if (viewerOpen()) {
+      resetPending();
       return;
     }
 

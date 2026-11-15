@@ -41,6 +41,10 @@ A count repeats or scales a command: `5j`, `3K`. Holding `j`, `k`, `h` or `l`
 glides smoothly rather than jumping (unless smooth scrolling is off). Esc
 leaves a text field, closes hints or find, and clears find highlights.
 
+While a [Largitude](https://github.com/codexjdub/Largitude) popup is open,
+Vimov leaves every key to it, so Largitude's own keys (`?`, `o`, `r`, `f` and
+the rest) work.
+
 `}` looks for a link marked `rel="next"`, then one whose text starts with
 "Next" or "Newer" (or 下一页 and 下一章 in Chinese), or ends in an arrow such
 as `›` or `»`; `{` does the same for "Prev", "Previous" and "Older" (上一页,
