@@ -103,6 +103,13 @@ Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.5.2)
+
+```
+- While a Largitude popup is open, Vimov leaves every key to it, so Largitude's own keys work: ? lists them, O opens the image, R turns it, F flips it and Z shows its actual size.
+- New installs put Vimov's button on the toolbar rather than in Firefox's Extensions menu.
+```
+
 ## Version notes (0.5.1)
 
 ```
