@@ -11,6 +11,28 @@ Vimov.search = (() => {
   const isSymbol = (word) => Object.hasOwn(Vimov.SEARCH_SYMBOLS, word);
   const CONFIRM_TABS = 10; // a folder with more bookmarks than this asks first
 
+  // What an empty list means, for the source the query searches: with
+  // nothing typed, then with words that matched nothing.
+  const NOTHING_YET = {
+    all: 'No other open tabs yet. Type to search bookmarks, history and the web',
+    tabs: 'No other open tabs',
+    bookmarks: 'No bookmarks yet',
+    history: 'No history yet',
+    web: 'Type what to search the web for',
+  };
+  const NO_MATCH = {
+    tabs: (text) => `No open tabs match “${text}”`,
+    bookmarks: (text) => `No bookmarks match “${text}”`,
+    history: (text) => `Nothing in your history matches “${text}”`,
+  };
+  function emptyText(query, source) {
+    const words = query.trim().split(/\s+/).filter(Boolean);
+    const text = words.filter((word) => !isSymbol(word)).join(' ');
+    const where = Vimov.searchSource(words, source);
+    if (!text) return NOTHING_YET[where] || NOTHING_YET.all;
+    return (NO_MATCH[where] || ((t) => `Nothing matches “${t}”`))(text);
+  }
+
   // `text` with the typed words in bold.
   function marked(text, words) {
     const span = el('span');
@@ -113,6 +135,9 @@ Vimov.search = (() => {
     input.setAttribute('aria-label', input.placeholder);
     const list = el('ol', 'results');
     list.setAttribute('role', 'listbox');
+    const empty = el('div', 'empty');
+    empty.setAttribute('role', 'status');
+    empty.hidden = true;
     const footer = el('div', 'footer');
     const keys = [
       hint('Ctrl+J/K', 'move'),
@@ -122,7 +147,7 @@ Vimov.search = (() => {
       hint('?', 'web'),
       hint('Shift+Enter', newTab ? 'this tab' : 'new tab'),
     ];
-    panel.append(input, list, footer);
+    panel.append(input, list, empty, footer);
     backdrop.append(panel);
     ui.root().append(backdrop);
 
@@ -162,6 +187,8 @@ Vimov.search = (() => {
         }),
       );
       list.hidden = !results.length;
+      empty.hidden = !!results.length;
+      empty.textContent = results.length ? '' : emptyText(input.value, source);
       select(Math.min(selected, Math.max(results.length - 1, 0)));
     }
 
@@ -260,5 +287,5 @@ Vimov.search = (() => {
     update();
   }
 
-  return { open };
+  return { open, emptyText };
 })();

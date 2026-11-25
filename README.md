@@ -44,6 +44,8 @@ leaves a text field, closes hints or find, and clears find highlights.
 
 `?` lists every key with your own mappings, opposite commands on one row
 (`j / k  Scroll down / up`), then the keys inside the vbar, find and hints.
+Type `/` there to filter it (`/tab`, `/ctrl`); Enter keeps the filter, Esc
+drops it. Link hints and find show their own keys in the corner while open.
 Pause half a second after the first key of a sequence, such as `g`, and the
 keys that can follow it show above the corner of the page. A first install
 opens a welcome page with the same list.

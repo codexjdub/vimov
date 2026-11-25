@@ -131,5 +131,23 @@ Vimov.keyReference = (() => {
     return keys.some((key) => key.length > 1) ? keys.map(label).join(' ') : notation;
   }
 
-  return { build, text };
+  // The sections with only the rows that have every typed word in their
+  // category, description or keys (as written or as shown: "gt", "ctrl+j");
+  // sections left empty are dropped.
+  function filter(sections, query) {
+    const words = String(query).toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return sections;
+    return sections
+      .map(({ category, rows }) => ({
+        category,
+        rows: rows.filter(({ groups, description }) => {
+          const keys = groups.flat().flatMap((notation) => [notation, text(notation)]);
+          const haystack = [category, description, ...keys].join(' ').toLowerCase();
+          return words.every((word) => haystack.includes(word));
+        }),
+      }))
+      .filter((section) => section.rows.length);
+  }
+
+  return { build, text, filter };
 })();

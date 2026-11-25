@@ -182,9 +182,11 @@ Vimov.hints = (() => {
     }
 
     const exitOnMouse = () => Vimov.mode.exit(mode);
+    const what = Vimov.describeCommand('linkHints', { action });
     const mode = {
       name: 'hints',
-      status: action === 'click' ? '' : Vimov.describeCommand('linkHints', { action }),
+      // The keys this mode takes, for anyone still learning them.
+      status: `Type a label to ${what[0].toLowerCase()}${what.slice(1)} · Backspace undo · Esc cancel`,
       onKey(key, event) {
         // Let browser shortcuts through.
         if (event.ctrlKey || event.metaKey) return false;

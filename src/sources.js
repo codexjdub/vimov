@@ -250,10 +250,8 @@ const Sources = (() => {
   // 'bookmarks', 'history' or 'web'; a symbol in the text overrides it.
   async function search(query = '', { source = 'all', tab } = {}) {
     const raw = String(query).trim().split(/\s+/).filter(Boolean);
-    // Own properties only, so words like "constructor" stay search words.
-    const symbol = (word) => (Object.hasOwn(SYMBOLS, word) ? SYMBOLS[word] : null);
-    for (const word of raw) source = symbol(word) || source;
-    const typed = raw.filter((word) => !symbol(word));
+    source = Vimov.searchSource(raw, source);
+    const typed = raw.filter((word) => !Object.hasOwn(SYMBOLS, word));
     const wants = (s) => source === 'all' || source === s;
 
     if (!typed.length) return (await recent(source, tab)).slice(0, MAX_RESULTS).map(withIcon);

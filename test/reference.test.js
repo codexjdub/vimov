@@ -59,3 +59,20 @@ test('with tabs down the side, J and K swap and the words say down and up', () =
   assert.strictEqual(Vimov.describeCommand('nextTab', {}, layout), 'Go one tab down');
   assert.strictEqual(Vimov.describeCommand('nextTab'), 'Go one tab right');
 });
+
+test('filtering keeps the rows with every word in their category, words or keys', () => {
+  const { filter } = Vimov.keyReference;
+  const sections = reference();
+  const descriptions = (query) => filter(sections, query).flatMap((s) => s.rows.map((r) => r.description));
+  // By what the row says, in any case.
+  assert(descriptions('RELOAD').includes('Reload the page'));
+  assert(descriptions('reload cache').every((d) => d === 'Reload, bypassing the cache'));
+  // By keys, as written or as shown.
+  assert(descriptions('gt').includes('Go one tab right / left'));
+  assert(descriptions('ctrl+j').includes('Next / previous result (Tab and the arrow keys too)'));
+  // By category: "tabs" finds the Tabs section's rows.
+  assert(descriptions('tabs').includes('Duplicate the tab'));
+  // Sections left empty are dropped; nothing typed keeps everything.
+  assert.deepStrictEqual(filter(sections, 'zzz'), []);
+  assert.strictEqual(filter(sections, '  '), sections);
+});

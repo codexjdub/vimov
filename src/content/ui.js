@@ -20,7 +20,7 @@ Vimov.ui = (() => {
     }
     .hud {
       right: 12px;
-      max-width: min(60vw, 520px);
+      max-width: min(70vw, 640px);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -29,6 +29,10 @@ Vimov.ui = (() => {
     /* Text drawn from an attribute isn't page text, so the browser's own
        find doesn't match it. */
     .hud::after { content: attr(data-text); }
+    /* In a narrow window the find bar's keys go above the bar, not beside it. */
+    @media (max-width: 860px) {
+      .hud:has(~ .find) { bottom: 46px; left: 12px; right: auto; }
+    }
 
     .next {
       position: fixed;
@@ -139,6 +143,19 @@ Vimov.ui = (() => {
     .help header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
     .help h1 { margin: 0; font-size: 18px; font-weight: 650; }
     .help .note { margin-left: auto; color: var(--muted); }
+    .help .filter {
+      all: unset;
+      width: 18ch;
+      padding: 3px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: inherit;
+      font: inherit;
+      caret-color: var(--accent);
+    }
+    .help .filter::placeholder { color: var(--muted); }
+    .help .filter:focus { border-color: var(--accent); }
+    .help .none { margin: 8px 0 16px; color: var(--muted); }
     .help button {
       font: inherit;
       color: inherit;
@@ -244,6 +261,7 @@ Vimov.ui = (() => {
     .search .title, .search .detail { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
     .search .detail { color: var(--muted); font-size: 12px; }
     .search b { color: var(--accent); font-weight: 650; }
+    .search .empty { padding: 12px 16px; color: var(--muted); }
     .search .footer {
       display: flex;
       flex-wrap: wrap;

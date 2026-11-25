@@ -208,6 +208,8 @@ Vimov.find = (() => {
     let outcome = 'keep'; // 'accept' on Enter, 'cancel' on Esc, 'keep' if focus moves away
     const mode = {
       name: 'find',
+      // The keys this mode takes, for anyone still learning them.
+      status: 'Enter go to the match · Ctrl+J/K next/previous · Esc cancel',
       onKey(key) {
         if (key === '<c-j>' || key === '<c-k>') {
           step(key === '<c-j>' ? 1 : -1);

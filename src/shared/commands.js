@@ -106,6 +106,10 @@ globalThis.Vimov = globalThis.Vimov || {};
   Vimov.COMMANDS = COMMANDS;
   Vimov.SEARCH_SOURCES = SEARCH_SOURCES;
   Vimov.SEARCH_SYMBOLS = SEARCH_SYMBOLS;
+  // The source a vbar query searches: its last symbol word, or `source`.
+  // Own properties only, so words like "constructor" stay search words.
+  Vimov.searchSource = (words, source) =>
+    words.reduce((where, word) => (Object.hasOwn(SEARCH_SYMBOLS, word) ? SEARCH_SYMBOLS[word] : where), source);
   Vimov.CATEGORIES = ['Scrolling', 'Page', 'Links', 'Find', 'Search', 'Tabs', 'Other'];
 
   // `layout` is { verticalTabs }, for the words of the tab commands.
