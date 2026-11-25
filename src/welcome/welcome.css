@@ -1,0 +1,62 @@
+/* On top of the options page's styles. */
+
+kbd {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--code);
+  font: 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-align: center;
+}
+
+.tips {
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.tips li {
+  padding: 3px 0;
+}
+
+.reference {
+  columns: 2 300px;
+  column-gap: 32px;
+  margin-top: 10px;
+}
+
+.group {
+  break-inside: avoid;
+  margin-bottom: 14px;
+}
+
+h3 {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.keys {
+  flex: 0 0 160px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.or {
+  color: var(--muted);
+}

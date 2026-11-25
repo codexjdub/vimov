@@ -98,6 +98,18 @@ Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF 
 **Privacy policy:** none needed; Vimov collects no data
 (`data_collection_permissions` is `none` in the manifest).
 
+## Screenshots
+
+In [`screenshots/`](screenshots/), 1280×800, uploaded under Images in this
+order with these captions. They show `dev/demo.html`, a made-up article page;
+take them again with `sh dev/screenshots.sh` when the UI changes.
+
+1. `1-hints.png`: Press f and type a label to click any link, button or field.
+2. `2-vbar.png`: Press o for one box that searches open tabs, bookmarks, history and the web.
+3. `3-help.png`: Press ? on any page for every key, your own mappings included.
+4. `4-find.png`: Press / to find on the page; n and N step through the matches.
+5. `5-next.png`: Pause after a first key to see the keys that can follow it.
+
 ## Notes to reviewer
 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them

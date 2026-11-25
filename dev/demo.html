@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keeping a starter alive through a busy week · Flour &amp; Field</title>
+  <!-- A made-up article page for the store screenshots. Serve the repo
+       (node dev/serve.mjs) and open dev/demo.html?harness, or add
+       &shot=hints, vbar, help, find or next to open that view by itself.
+       dev/screenshots.sh takes all five. -->
+  <script src="harness.js"></script>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --soft: #5b6270;
+      --line: #e6e1d8;
+      --paper: #fbf8f3;
+      --link: #9a3412;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 17px/1.65 Georgia, "Iowan Old Style", "Times New Roman", serif;
+    }
+    a { color: var(--link); text-underline-offset: 2px; }
+    .top {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      padding: 14px 48px;
+      border-bottom: 1px solid var(--line);
+      font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    .top .brand { color: var(--ink); font: 700 21px/1 Georgia, serif; text-decoration: none; }
+    .top nav { display: flex; gap: 22px; }
+    .top nav a { color: var(--soft); text-decoration: none; }
+    .top .right { margin-left: auto; display: flex; gap: 16px; }
+    .top .right a { color: var(--soft); text-decoration: none; }
+    .page {
+      display: grid;
+      grid-template-columns: minmax(0, 680px) 260px;
+      gap: 64px;
+      justify-content: center;
+      padding: 36px 48px 64px;
+    }
+    .kicker { margin: 0 0 6px; color: var(--link); font: 600 13px/1 system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
+    h1 { margin: 0 0 10px; font-size: 40px; line-height: 1.15; letter-spacing: -0.01em; }
+    .byline { margin: 0 0 22px; color: var(--soft); font: 14px/1.4 system-ui, sans-serif; }
+    .figure {
+      height: 150px;
+      margin: 0 0 22px;
+      border-radius: 10px;
+      background:
+        radial-gradient(circle at 22% 60%, #f3e3c3 0 18%, transparent 19%),
+        radial-gradient(circle at 48% 42%, #ead2a4 0 14%, transparent 15%),
+        radial-gradient(circle at 74% 58%, #f0dcb4 0 20%, transparent 21%),
+        linear-gradient(135deg, #c98a4b, #8c5a2b);
+    }
+    h2 { margin: 28px 0 8px; font-size: 24px; }
+    p { margin: 0 0 16px; }
+    aside { font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    aside h3 { margin: 0 0 10px; color: var(--soft); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    aside ul { margin: 0 0 28px; padding: 0; list-style: none; }
+    aside li { padding: 7px 0; border-bottom: 1px solid var(--line); }
+    aside a { color: var(--ink); text-decoration: none; }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tags a { padding: 3px 10px; border: 1px solid var(--line); border-radius: 99px; color: var(--soft); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="#home">Flour &amp; Field</a>
+    <nav>
+      <a href="#recipes">Recipes</a>
+      <a href="#techniques">Techniques</a>
+      <a href="#notebook">Notebook</a>
+      <a href="#about">About</a>
+    </nav>
+    <div class="right">
+      <a href="#search">Search</a>
+      <a href="#subscribe">Subscribe</a>
+    </div>
+  </header>
+
+  <div class="page">
+    <article>
+      <p class="kicker">Techniques</p>
+      <h1>Keeping a starter alive through a busy week</h1>
+      <p class="byline">A notebook entry · 9 min read · <a href="#comments">24 comments</a></p>
+      <div class="figure" role="img" aria-label="Rounds of dough on a floured board"></div>
+
+      <p>A starter doesn’t need daily attention as much as it needs a routine that fits the days you actually have. The schedule below keeps one lively on two feedings a week, and leaves room for the evenings when the jar gets forgotten. If you’re new to this, start with <a href="#first-starter">your first starter</a> and come back once it doubles reliably.</p>
+
+      <h2>Feed less, feed colder</h2>
+      <p>The trick is slowing the starter down rather than keeping up with it. A stiffer mix, about <a href="#hydration">60% hydration</a>, ferments more slowly, and a spell in the fridge stretches the time between feedings to three or four days. Take it out the evening before you bake, give it a <a href="#refresh">warm refresh</a>, and it’s ready by morning.</p>
+
+      <h2>When the week gets away from you</h2>
+      <p>Grey liquid on top means it’s hungry, not ruined. Pour it off, keep a spoonful from the bottom, and feed it twice at room temperature. Most starters bounce back within a day; the <a href="#troubleshooting">troubleshooting notes</a> cover the stubborn ones, and the <a href="#starter-log">starter log</a> shows how ours recovered after ten days away.</p>
+
+      <h2>A weekly rhythm</h2>
+      <p>Sunday: feed and bake. Wednesday: feed and back in the fridge. That’s it. For loaves that fit around work, try the <a href="#overnight-loaf">overnight loaf</a> or the <a href="#weekday-focaccia">weekday focaccia</a>, both shaped in under twenty minutes.</p>
+    </article>
+
+    <aside>
+      <h3>In this series</h3>
+      <ul>
+        <li><a href="#first-starter">Your first starter, day by day</a></li>
+        <li><a href="#flour-guide">Choosing flour for a starter</a></li>
+        <li><a href="#discard">Seven uses for starter discard</a></li>
+        <li><a href="#storing">Drying a starter for safekeeping</a></li>
+      </ul>
+      <h3>Popular</h3>
+      <ul>
+        <li><a href="#overnight-loaf">The overnight loaf</a></li>
+        <li><a href="#weekday-focaccia">Weekday focaccia</a></li>
+        <li><a href="#rye">A simple rye</a></li>
+      </ul>
+      <h3>Tags</h3>
+      <div class="tags">
+        <a href="#tag-sourdough">sourdough</a>
+        <a href="#tag-routine">routine</a>
+        <a href="#tag-fermentation">fermentation</a>
+        <a href="#tag-baking">baking</a>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // ?shot=… opens one of Vimov's views once the harness has loaded, by
+    // calling Vimov directly: key events made by a script are ignored.
+    const shot = new URLSearchParams(location.search).get('shot');
+    const ready = () =>
+      new Promise((resolve) => {
+        const check = () => (document.documentElement.dataset.harness === 'ready' && Vimov.state.settings ? resolve() : setTimeout(check, 20));
+        check();
+      });
+    const type = (selector, text) => {
+      const input = Vimov.ui.root().querySelector(selector);
+      input.value = text;
+      input.dispatchEvent(new Event('input'));
+    };
+    // The list that shows half a second after g, as main.js builds it.
+    function showNext(first) {
+      const next = new Map();
+      for (const { keys, command, options } of Vimov.state.keymap.bindings.values()) {
+        if (keys.length < 2 || keys[0] !== first) continue;
+        const key = Vimov.keyReference.text(keys.slice(0, 2).join(''));
+        next.set(key, keys.length === 2 ? Vimov.describeCommand(command, options) : '…');
+      }
+      Vimov.ui.setStatus(first);
+      Vimov.ui.showNext([...next].map(([key, description]) => ({ key, description })));
+    }
+    const SHOTS = {
+      hints: () => Vimov.actions.linkHints(1, {}),
+      vbar: () => {
+        Vimov.actions.search(1, {});
+        type('.search input', 'vimov');
+      },
+      help: () => Vimov.actions.showHelp(),
+      find: () => {
+        Vimov.actions.find();
+        type('.find input', 'starter');
+      },
+      next: () => showNext('g'),
+    };
+    if (SHOTS[shot]) ready().then(SHOTS[shot]);
+  </script>
+</body>
+</html>

@@ -19,7 +19,8 @@ npx web-ext run
 
 `npx web-ext build` makes the zip for addons.mozilla.org; `web-ext-config.mjs`
 keeps development files out of it. The listing text lives in
-`store/amo-listing.md`.
+`store/amo-listing.md`, and `sh dev/screenshots.sh` retakes its screenshots
+(with `node dev/serve.mjs` running).
 
 ## Keys
 
@@ -40,6 +41,12 @@ keeps development files out of it. The listing text lives in
 A count repeats or scales a command: `5j`, `3K`. Holding `j`, `k`, `h` or `l`
 glides smoothly rather than jumping (unless smooth scrolling is off). Esc
 leaves a text field, closes hints or find, and clears find highlights.
+
+`?` lists every key with your own mappings, opposite commands on one row
+(`j / k  Scroll down / up`), then the keys inside the vbar, find and hints.
+Pause half a second after the first key of a sequence, such as `g`, and the
+keys that can follow it show above the corner of the page. A first install
+opens a welcome page with the same list.
 
 While a [Largitude](https://github.com/codexjdub/Largitude) popup is open,
 Vimov leaves every key to it, so Largitude's own keys (`?`, `o`, `r`, `f` and
@@ -69,6 +76,10 @@ With nothing typed, `o` lists your five most recently used tabs, then your
 most visited sites (the ones on Firefox's new-tab page), then your other tabs
 if there's room: 10 results in all. In a private window it lists only your
 private tabs.
+
+Results show the site's icon when Firefox already has it from an open tab or
+your top sites, and a letter otherwise. Vimov never fetches icons, which would
+tell sites what you have open.
 
 - Ctrl+J and Ctrl+K (or Tab and Shift+Tab, or the arrow keys) move down and
   up the results.

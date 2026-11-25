@@ -1,29 +1,21 @@
 'use strict';
 
-// Help overlay: every mapped key, grouped by category, built from the live
-// keymap so it reflects the user's own mappings.
+// Help overlay: every mapped key, grouped by category, from the live keymap
+// so it reflects the user's own mappings (src/shared/reference.js builds
+// the list), then the keys inside the vbar, find and hints.
 
 Vimov.help = (() => {
   const { ui } = Vimov;
   const { el } = ui;
 
-  // [{ category, rows: [{ command, description, keys }] }], with rows in
-  // command-registry order and bindings that do the same thing merged.
-  function sections() {
-    const rows = new Map();
-    for (const { keys, command, options } of Vimov.state.keymap.bindings.values()) {
-      const description = Vimov.describeCommand(command, options);
-      const id = `${command}\n${description}`;
-      if (!rows.has(id)) rows.set(id, { command, description, keys: [] });
-      rows.get(id).keys.push(keys.join(''));
-    }
-    const order = Object.keys(Vimov.COMMANDS);
-    return Vimov.CATEGORIES.map((category) => ({
-      category,
-      rows: [...rows.values()]
-        .filter((row) => Vimov.COMMANDS[row.command].category === category)
-        .sort((a, b) => order.indexOf(a.command) - order.indexOf(b.command)),
-    })).filter((section) => section.rows.length);
+  // The keys of a row: each group's keys, with a slash between groups.
+  function keyCells(groups) {
+    const cells = el('span', 'keys');
+    groups.forEach((group, i) => {
+      if (i) cells.append(el('span', 'or', '/'));
+      cells.append(...group.map((notation) => el('kbd', '', Vimov.keyReference.text(notation))));
+    });
+    return cells;
   }
 
   function open() {
@@ -37,14 +29,12 @@ Vimov.help = (() => {
     header.append(el('h1', '', 'Vimov'), el('span', 'note', 'Esc to close'), options);
 
     const columns = el('div', 'columns');
-    for (const { category, rows } of sections()) {
+    for (const { category, rows } of Vimov.keyReference.build(Vimov.state.keymap.bindings)) {
       const section = el('section');
       section.append(el('h2', '', category));
       for (const row of rows) {
         const line = el('div', 'row');
-        const keys = el('span', 'keys');
-        keys.append(...row.keys.map((k) => el('kbd', '', k)));
-        line.append(keys, el('span', '', row.description));
+        line.append(keyCells(row.groups), el('span', '', row.description));
         section.append(line);
       }
       columns.append(section);

@@ -41,7 +41,9 @@ Vimov.bg = async (cmd, args = {}) => {
     if (response?.error) Vimov.ui.message(response.error);
     return response;
   } catch (err) {
-    Vimov.ui.message(`Vimov: ${err.message}`);
+    // Firefox's own wording means little to a reader; it goes to the console.
+    console.error('Vimov:', err);
+    Vimov.ui.message('Vimov couldn’t finish that. Reloading the page may help.');
     return null;
   }
 };

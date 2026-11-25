@@ -11,9 +11,12 @@ async function setup(stored = {}) {
   const listeners = {};
   const body = { localName: 'body' };
   const field = { localName: 'input', blur() {} };
-  const page = { active: body, viewer: false };
+  const page = { active: body, viewer: false, failing: null };
   const ran = [];
+  const messages = [];
+  const next = []; // what the list of keys that can follow showed, each time
   const ctx = load(SHARED, {
+    console: { ...console, error() {} }, // failures are logged; keep test output clean
     document: { querySelector: (selector) => (page.viewer && selector === 'largitude-popup:popover-open' ? {} : null) },
     browser: {
       storage: { sync: { get: async (defaults) => ({ ...defaults, ...stored }) }, onChanged: event() },
@@ -22,12 +25,18 @@ async function setup(stored = {}) {
     location: { href: 'https://example.com/' },
     addEventListener: (type, fn) => (listeners[type] ||= []).push(fn),
   });
-  ctx.Vimov.ui = { setStatus() {}, message() {} };
+  ctx.Vimov.ui = { setStatus() {}, message: (text) => messages.push(text), showNext: (rows) => next.push(JSON.parse(JSON.stringify(rows))) };
   ctx.Vimov.dom = { deepActiveElement: () => page.active, isEditable: (el) => el === field };
   ctx.Vimov.find = { clear: () => false };
-  run(ctx, ['src/content/core.js']);
-  // Every command just records that it ran, with its count.
-  ctx.Vimov.actions = new Proxy({}, { get: (_, command) => (n) => ran.push(`${command}:${n}`) });
+  run(ctx, ['src/shared/reference.js', 'src/content/core.js']);
+  // Every command just records that it ran, with its count, unless it's
+  // the one set to fail.
+  ctx.Vimov.actions = new Proxy({}, {
+    get: (_, command) => (n) => {
+      if (page.failing === command) throw new Error('Firefox said no');
+      ran.push(`${command}:${n}`);
+    },
+  });
   run(ctx, ['src/content/main.js']);
   await new Promise((resolve) => setTimeout(resolve, 0)); // settings load
 
@@ -43,7 +52,7 @@ async function setup(stored = {}) {
     return e;
   };
   const press = (key, code, options) => [fire('keydown', key, code, options), fire('keypress', key, code, options), fire('keyup', key, code, options)];
-  return { fire, press, page, body, field, ran };
+  return { fire, press, page, body, field, ran, messages, next };
 }
 
 test('a mapped key runs its command and is hidden from the page', async () => {
@@ -105,4 +114,43 @@ test('keys are left to Largitude while its popup is open', async () => {
   press('H', 'KeyH', { shiftKey: true });
   press('?', 'Slash', { shiftKey: true });
   assert.deepStrictEqual(ran, ['goBack:1', 'showHelp:1']);
+});
+
+test('a command that fails says what didn\'t work, in plain words', async () => {
+  const { press, page, messages } = await setup();
+  page.failing = 'reload';
+  press('r', 'KeyR');
+  page.failing = 'search';
+  press('O', 'KeyO', { shiftKey: true });
+  assert.deepStrictEqual(messages, [
+    'Couldn’t reload the page',
+    'Couldn’t search tabs, bookmarks, history and the web, opening in a new tab',
+  ]);
+});
+
+test('half a second into a sequence, the keys that can follow it are listed', async () => {
+  const { press, next } = await setup();
+  press('g', 'KeyG');
+  assert.deepStrictEqual(next.at(-1), []);
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  const listed = next.at(-1);
+  assert.deepStrictEqual(listed.slice(0, 2), [
+    { key: 'gg', description: 'Scroll to the top' },
+    { key: 'gu', description: 'Go up one level in the URL' },
+  ]);
+  assert(listed.some((row) => row.key === 'gt' && row.description === 'Go one tab right'));
+  // The next key hides it, and typed quickly it never shows.
+  press('g', 'KeyG');
+  assert.deepStrictEqual(next.at(-1), []);
+  press('g', 'KeyG');
+  press('t', 'KeyT');
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  assert.deepStrictEqual(next.at(-1), []);
+});
+
+test('a key that starts a longer sequence is listed with an ellipsis', async () => {
+  const { press, next } = await setup({ keymap: 'map gxa scrollDown\nmap gxb scrollUp' });
+  press('g', 'KeyG');
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  assert(next.at(-1).some((row) => row.key === 'gx' && row.description === '…'));
 });

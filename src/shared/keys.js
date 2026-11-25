@@ -170,7 +170,7 @@ Vimov.keys = (() => {
           bindings.set(keys.join(' '), { keys, command, options: parseOptions(command, options) });
         } else if (verb === 'unmap') {
           if (args.length !== 1) throw new Error('Expected: unmap <keys>');
-          if (!bindings.delete(parse(args[0]).join(' '))) throw new Error(`${args[0]} isn't mapped`);
+          if (!bindings.delete(parse(args[0]).join(' '))) throw new Error(`${args[0]} isn’t mapped`);
         } else if (verb === 'unmapAll') {
           if (args.length) throw new Error('unmapAll takes no arguments');
           bindings.clear();

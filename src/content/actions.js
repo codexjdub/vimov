@@ -72,7 +72,12 @@ Vimov.actions = (() => {
     },
 
     openUrl: (n, { url, newTab }) => {
-      const href = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).href;
+      let href;
+      try {
+        href = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).href;
+      } catch {
+        return ui.message(`Can’t open ${url}: it isn’t a web address`);
+      }
       if (newTab) return Vimov.bg('openUrl', { url: href, active: true });
       return navigate(href);
     },

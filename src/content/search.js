@@ -30,6 +30,48 @@ Vimov.search = (() => {
 
   const shortUrl = (url) => url.replace(/^https?:\/\//, '');
 
+  // Line drawings for the rows that aren't a site: a magnifier for a web
+  // search, a folder for a bookmark folder.
+  const GLYPHS = {
+    web: 'M11.5 7a4.5 4.5 0 1 1-9 0a4.5 4.5 0 1 1 9 0M10.3 10.3 14 14',
+    folder: 'M2 5a1 1 0 0 1 1-1h3l1.5 1.5H13a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z',
+  };
+  const SVG = 'http://www.w3.org/2000/svg';
+
+  function glyph(path) {
+    const box = el('span', 'icon glyph');
+    const svg = document.createElementNS(SVG, 'svg');
+    svg.setAttribute('viewBox', '0 0 16 16');
+    const line = document.createElementNS(SVG, 'path');
+    line.setAttribute('d', path);
+    svg.append(line);
+    box.append(svg);
+    return box;
+  }
+
+  // A tile with the first letter of the site's name (github for
+  // www.github.com), for a site without an icon.
+  function letter(result) {
+    let name = '';
+    try {
+      name = new URL(result.url).hostname.replace(/^www\./, '');
+    } catch {}
+    const first = Array.from(name || result.title || '')[0] || '';
+    return el('span', 'icon letter', first.toUpperCase());
+  }
+
+  // The site's icon, when Firefox had one to give (src/sources.js); a page
+  // whose rules don't allow the image gets the letter tile instead.
+  function icon(result) {
+    if (GLYPHS[result.type]) return glyph(GLYPHS[result.type]);
+    if (!result.icon) return letter(result);
+    const img = el('img', 'icon');
+    img.alt = '';
+    img.addEventListener('error', () => img.replaceWith(letter(result)), { once: true });
+    img.src = result.icon;
+    return img;
+  }
+
   function row(result, words) {
     const item = el('li', 'result');
     item.setAttribute('role', 'option');
@@ -46,7 +88,7 @@ Vimov.search = (() => {
     const detailLine = result.type === 'web' ? el('span', '', detail) : marked(detail, words);
     detailLine.className = 'detail';
     text.append(titleLine, detailLine);
-    item.append(el('span', `tag ${result.type}`, TAGS[result.type]), text);
+    item.append(el('span', `tag ${result.type}`, TAGS[result.type]), icon(result), text);
     return item;
   }
 
@@ -79,7 +121,6 @@ Vimov.search = (() => {
       hint('^', 'history'),
       hint('?', 'web'),
       hint('Shift+Enter', newTab ? 'this tab' : 'new tab'),
-      hint('Shift+Del', 'remove'),
     ];
     panel.append(input, list, footer);
     backdrop.append(panel);

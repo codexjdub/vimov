@@ -120,7 +120,7 @@ test('empty box lists five tabs, then top sites, then the other tabs', async () 
     'site:Hacker News', 'site:codexjdub/vimov', 'site:Wikipedia',
     'tab:Tab 5', 'tab:Tab 6',
   ]);
-  assert.deepStrictEqual(plain(calls.find(([name]) => name === 'topSites.get')), ['topSites.get', { includePinned: true, limit: 10 }]);
+  assert.deepStrictEqual(plain(calls.find(([name]) => name === 'topSites.get')), ['topSites.get', { includePinned: true, includeFavicon: true, limit: 10 }]);
   // Not the page you're on, and not in T.
   assert(!(await titles('all', { ...tab, url: 'https://news.ycombinator.com/' })).includes('site:Hacker News'));
   assert(!(await titles('tabs')).some((r) => r.startsWith('site:')));
@@ -136,6 +136,39 @@ test('empty box in a private window lists private tabs, not top sites', async ()
 test('empty box still lists tabs when Firefox can\'t list top sites', async () => {
   const { search } = setup({ topSites: { get: async () => { throw new Error('no top sites'); } } });
   assert.deepStrictEqual((await search('')).map((r) => r.id), [4, 2, 3, 6]);
+});
+
+// Site icons Firefox hands over as data: URLs, from open tabs and top sites.
+const PNG = 'data:image/png;base64,iVBORw0KGgo=';
+const GIF = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+
+test('results get the site icon Firefox has for their host', async () => {
+  const tabs = [
+    { ...TABS[1], favIconUrl: PNG },
+    { ...TABS[2], favIconUrl: 'https://developer.mozilla.org/favicon.ico' },
+    { ...TABS[4], favIconUrl: GIF },
+  ];
+  const sites = TOP_SITES.map((s) => (s.title === 'Hacker News' ? { ...s, favicon: GIF } : s));
+  const { Sources, search } = setup({ tabs: { query: async () => tabs }, topSites: { get: async () => sites } });
+  const icons = (results) => Object.fromEntries(results.map((r) => [r.title, r.icon || 'none']));
+  const empty = icons(await search(''));
+  assert.strictEqual(empty['codexjdub/vimov: Vim-style keyboard browsing'], PNG);
+  assert.strictEqual(empty['Hacker News'], GIF);
+  // A bookmark on a host seen in a tab or top site gets its icon too.
+  const bookmarks = icons(await search('*'));
+  assert.strictEqual(bookmarks['Vimov issues'], PNG);
+  assert.strictEqual(bookmarks['Hacker News'], GIF);
+  // Not an icon Firefox would have to fetch, and not a private tab's.
+  assert.strictEqual(icons(await search('mdn'))['MDN Web Docs'], 'none');
+  const inPrivate = { id: 7, index: 0, windowId: 3, incognito: true };
+  assert.strictEqual(icons(plain(await Sources.search('private', { tab: inPrivate })))['Private tab'], 'none');
+});
+
+test('an oversized site icon is left out', async () => {
+  const big = `data:image/png;base64,${'A'.repeat(40 * 1024)}`;
+  const { search } = setup({ tabs: { query: async () => [{ ...TABS[1], favIconUrl: big }] } });
+  const results = await search('vimov');
+  assert(results.some((r) => r.type === 'tab') && !results.some((r) => r.icon));
 });
 
 test('empty bookmarks box lists newest bookmarks', async () => {

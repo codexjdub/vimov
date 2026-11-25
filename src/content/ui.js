@@ -30,6 +30,25 @@ Vimov.ui = (() => {
        find doesn't match it. */
     .hud::after { content: attr(data-text); }
 
+    .next {
+      position: fixed;
+      right: 12px;
+      bottom: 46px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1px 12px;
+      max-width: min(60vw, 420px);
+      padding: 7px 12px;
+      border-radius: 6px;
+      background: rgba(24, 24, 27, 0.94);
+      color: #d4d4d8;
+      font: 12px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      pointer-events: none;
+    }
+    .next .key { color: #fbbf24; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .next .key::after, .next .what::after { content: attr(data-text); }
+
     .hint {
       position: fixed;
       padding: 1px 4px;
@@ -140,7 +159,8 @@ Vimov.ui = (() => {
       text-transform: uppercase;
     }
     .help .row { display: flex; gap: 12px; padding: 3px 0; border-bottom: 1px solid var(--line); }
-    .help .keys { flex: 0 0 104px; display: flex; flex-wrap: wrap; gap: 4px; }
+    .help .keys { flex: 0 0 132px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+    .help .or { color: var(--muted); }
     .help kbd, .search kbd {
       padding: 0 5px;
       border: 1px solid var(--line);
@@ -181,13 +201,44 @@ Vimov.ui = (() => {
       cursor: pointer;
     }
     .search .result.selected { background: var(--selected); }
+    /* A fixed width, so the icons and titles line up on every row. */
     .search .tag {
-      flex: 0 0 60px;
+      flex: 0 0 76px;
+      overflow: hidden;
+      text-overflow: ellipsis;
       color: var(--muted);
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.04em;
       text-transform: uppercase;
+    }
+    .search .icon {
+      flex: 0 0 16px;
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      object-fit: contain;
+    }
+    .search .icon.letter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--line);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .search .icon.glyph { color: var(--muted); }
+    .search .icon svg {
+      display: block;
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
     .search .text { display: flex; flex-direction: column; min-width: 0; }
     .search .title, .search .detail { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -196,7 +247,7 @@ Vimov.ui = (() => {
     .search .footer {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px 14px;
+      gap: 6px 12px;
       padding: 8px 16px;
       border-top: 1px solid var(--line);
       color: var(--muted);
@@ -218,9 +269,15 @@ Vimov.ui = (() => {
     return node;
   }
 
+  // When Vimov is updated, Firefox runs the new version in open tabs, but
+  // whatever the old one had on the page (an open vbar or help) stays there
+  // with nothing left to close it. It goes before the new one starts.
+  for (const old of document.querySelectorAll('vimov-ui')) old.remove();
+
   let host = null;
   let root = null;
   let hud = null;
+  let nextBox = null; // the keys that can follow a partly typed sequence
   let status = '';
   let message = '';
   let messageTimer = 0;
@@ -278,6 +335,28 @@ Vimov.ui = (() => {
     setStatus(text) {
       status = text;
       if (host || text) render();
+    },
+
+    // Lists the keys that can follow what's been typed, above the HUD, as
+    // [{ key, description }]; an empty list hides it. Drawn from attributes,
+    // like the HUD, so the browser's find doesn't match it.
+    showNext(rows) {
+      if (!rows.length) {
+        nextBox?.remove();
+        nextBox = null;
+        return;
+      }
+      nextBox ||= el('div', 'next');
+      nextBox.replaceChildren(
+        ...rows.flatMap(({ key, description }) => {
+          const keyCell = el('span', 'key');
+          const what = el('span', 'what');
+          keyCell.dataset.text = key;
+          what.dataset.text = description;
+          return [keyCell, what];
+        }),
+      );
+      getRoot().append(nextBox);
     },
 
     // A transient HUD message that overrides the status for a while.

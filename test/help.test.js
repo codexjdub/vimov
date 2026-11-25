@@ -15,7 +15,7 @@ const node = () => new Proxy(function () {}, {
 test('the help overlay takes its keys and lets browser shortcuts through', () => {
   const ctx = load(SHARED, { browser: {} });
   ctx.Vimov.ui = { el: node, root: node, setStatus() {}, message() {} };
-  run(ctx, ['src/content/core.js', 'src/content/help.js']);
+  run(ctx, ['src/shared/reference.js', 'src/content/core.js', 'src/content/help.js']);
   ctx.Vimov.state.keymap = ctx.Vimov.keys.buildKeymap('');
   ctx.Vimov.help.open();
   const help = ctx.Vimov.mode.current;

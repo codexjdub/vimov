@@ -47,6 +47,7 @@
         "src/shared/commands.js",
         "src/shared/defaults.js",
         "src/shared/keys.js",
+        "src/shared/reference.js",
         "src/content/dom.js",
         "src/content/ui.js",
         "src/content/core.js",

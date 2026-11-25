@@ -18,12 +18,17 @@ function setup({
   const button = {}; // tab id → { enabled, badge, title }
   const show = (tabId, change) => (button[tabId] = { ...button[tabId], ...change });
   const browser = {
-    runtime: { onMessage: event(), onInstalled: event(), onStartup: event(), openOptionsPage: async () => opened.push(['options']) },
+    runtime: {
+      onMessage: event(), onInstalled: event(), onStartup: event(),
+      openOptionsPage: async () => opened.push(['options']),
+      getURL: (path) => `moz-extension://vimov/${path}`,
+    },
     omnibox: { setDefaultSuggestion() {}, onInputChanged: event(), onInputEntered: event() },
     tabs: {
       query: async () => tabs,
       get: async (id) => tabs.find((t) => t.id === id),
       toggleReaderMode: async (id) => opened.push(['reader', id]),
+      create: async ({ url }) => opened.push(['tab', url]),
       onActivated: event(),
       onUpdated: event(),
     },
@@ -197,4 +202,18 @@ test('the button follows the active tab as it navigates', async () => {
   assert.strictEqual(button[1].badge, 'off');
   await browser.tabs.onUpdated.fire(1, { url: 'https://example.com/' }, tab);
   assert.strictEqual(button[1].badge, '');
+});
+
+test('a first install opens the welcome page; updates and temporary loads don\'t', async () => {
+  const welcome = ['tab', 'moz-extension://vimov/src/welcome/welcome.html'];
+  for (const [details, expected] of [
+    [{ reason: 'install', temporary: false }, [welcome]],
+    [{ reason: 'install', temporary: true }, []],
+    [{ reason: 'update', temporary: false }, []],
+  ]) {
+    const { browser, opened, button } = setup();
+    await browser.runtime.onInstalled.fire(details);
+    assert.deepStrictEqual(plain(opened), expected);
+    assert.strictEqual(button[1].enabled, true);
+  }
 });

@@ -12,6 +12,9 @@ Vimov.find = (() => {
   // The CSS Custom Highlight API paints matches without touching the DOM.
   // Without it, only the current match is shown, as the selection.
   const registry = typeof Highlight === 'function' ? globalThis.CSS?.highlights : null;
+  // Highlights left by an older Vimov, before an update.
+  registry?.delete('vimov-find');
+  registry?.delete('vimov-find-current');
 
   let lastQuery = '';
   let current = null; // Range of the current match

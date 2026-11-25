@@ -162,4 +162,11 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && changes.exclusions) showButtonInActiveTabs();
 });
 browser.runtime.onStartup.addListener(showButtonInActiveTabs);
-browser.runtime.onInstalled.addListener(showButtonInActiveTabs);
+browser.runtime.onInstalled.addListener(({ reason, temporary } = {}) => {
+  // A first install opens the welcome page; an update, or loading Vimov
+  // from about:debugging while working on it, doesn't.
+  if (reason === 'install' && !temporary) {
+    browser.tabs.create({ url: browser.runtime.getURL('src/welcome/welcome.html') });
+  }
+  return showButtonInActiveTabs();
+});

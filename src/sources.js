@@ -70,10 +70,38 @@ const Sources = (() => {
     return bookmarkCache;
   }
 
+  // Site icons that Firefox hands over as data, from open tabs and top
+  // sites, by host, so a bookmark or history entry on the same site shows
+  // one too. Icons that would have to be downloaded aren't used: fetching
+  // them would tell sites about your other tabs, and many pages block
+  // images from elsewhere. Private tabs' icons aren't kept.
+  const icons = new Map(); // host → data: URL, the most recently seen last
+  const MAX_ICON = 32 * 1024;
+  const MAX_ICONS = 500;
+  const hostOf = (url) => {
+    try {
+      return new URL(url).host;
+    } catch {
+      return '';
+    }
+  };
+  function learnIcon(url, icon) {
+    const host = hostOf(url);
+    if (!host || !/^data:image\//.test(icon || '') || icon.length > MAX_ICON) return;
+    icons.delete(host);
+    icons.set(host, icon);
+    if (icons.size > MAX_ICONS) icons.delete(icons.keys().next().value);
+  }
+  const withIcon = (item) => {
+    const icon = item.url && icons.get(hostOf(item.url));
+    return icon ? { ...item, icon } : item;
+  };
+
   // Open tabs in every window, except the one searching and tabs from private
   // windows when it's a normal one (or the other way round).
   async function openTabs(current) {
     const tabs = await browser.tabs.query({ hidden: false });
+    for (const t of tabs) if (!t.incognito) learnIcon(t.url, t.favIconUrl);
     return tabs
       .filter((t) => t.id !== current?.id && t.incognito === !!current?.incognito)
       .map((t) => ({ type: 'tab', id: t.id, windowId: t.windowId, title: t.title || '', url: t.url || '', lastAccessed: t.lastAccessed || 0 }));
@@ -99,10 +127,10 @@ const Sources = (() => {
   // can't list them, the box still shows your tabs.
   async function topSites() {
     try {
-      const sites = await browser.topSites.get({ includePinned: true, limit: MAX_RESULTS });
-      return sites
-        .filter((s) => s.type !== 'search' && OPENABLE.test(s.url))
-        .map((s) => ({ type: 'site', title: s.title || '', url: s.url }));
+      const sites = await browser.topSites.get({ includePinned: true, includeFavicon: true, limit: MAX_RESULTS });
+      const pages = sites.filter((s) => s.type !== 'search' && OPENABLE.test(s.url));
+      for (const s of pages) learnIcon(s.url, s.favicon);
+      return pages.map((s) => ({ type: 'site', title: s.title || '', url: s.url }));
     } catch {
       return [];
     }
@@ -228,7 +256,7 @@ const Sources = (() => {
     const typed = raw.filter((word) => !symbol(word));
     const wants = (s) => source === 'all' || source === s;
 
-    if (!typed.length) return (await recent(source, tab)).slice(0, MAX_RESULTS);
+    if (!typed.length) return (await recent(source, tab)).slice(0, MAX_RESULTS).map(withIcon);
 
     // Every source at once, so a keystroke waits for the slowest lookup
     // rather than all of them in turn. History is looked up for tabs and
@@ -270,7 +298,7 @@ const Sources = (() => {
       ...ranked.filter((r) => r.rank >= STRONG).map((r) => r.item),
       ...(engine ? [webSearch(engine, text)] : []),
       ...ranked.filter((r) => r.rank < STRONG).map((r) => r.item),
-    ].slice(0, MAX_RESULTS);
+    ].slice(0, MAX_RESULTS).map(withIcon);
   }
 
   // Opens a result from search(), from the tab `tab`. `background` keeps new
@@ -295,7 +323,7 @@ const Sources = (() => {
           ...(newTab ? { disposition: 'NEW_TAB' } : { tabId: tab.id }),
         });
       default:
-        if (!OPENABLE.test(result.url)) throw new Error(`Can't open ${result.url}`);
+        if (!OPENABLE.test(result.url)) throw new Error(`Can’t open ${result.url}`);
         return newTab ? create(result.url) : browser.tabs.update(tab.id, { url: result.url });
     }
   }

@@ -38,8 +38,31 @@
     return state.exclusion;
   }
 
+  // Half a second into a partly typed sequence, the keys that can follow it
+  // are listed above the HUD (after g: gg to the top, gt the next tab…).
+  // Typed at speed, it never shows.
+  const NEXT_DELAY = 500;
+  let nextTimer = 0;
+
+  // [{ key, description }] for each key that can follow what's been typed,
+  // in keymap order; "…" for one that starts a longer sequence.
+  function continuations() {
+    const next = new Map();
+    for (const { keys: seq, command, options } of state.keymap.bindings.values()) {
+      if (seq.length <= pending.length || pending.some((key, i) => seq[i] !== key)) continue;
+      const key = Vimov.keyReference.text([...pending, seq[pending.length]].join(''));
+      const complete = seq.length === pending.length + 1;
+      if (complete) next.set(key, Vimov.describeCommand(command, options));
+      else if (!next.has(key)) next.set(key, '…');
+    }
+    return [...next].map(([key, description]) => ({ key, description }));
+  }
+
   function showPending() {
     if (!mode.current) ui.setStatus(count + pending.join(''));
+    clearTimeout(nextTimer);
+    ui.showNext([]);
+    if (pending.length && !mode.current) nextTimer = setTimeout(() => ui.showNext(continuations()), NEXT_DELAY);
   }
 
   function resetPending() {
@@ -69,13 +92,20 @@
     if (event.type === 'keyup') followups.delete(event.code);
   }
 
+  // A command that fails unexpectedly says what didn't work, in the words of
+  // the help ("Couldn’t reload the page"); the details go to the console.
+  function failed(command, options, err) {
+    console.error('Vimov:', err);
+    const what = Vimov.describeCommand(command, options);
+    ui.message(`Couldn’t ${what[0].toLowerCase()}${what.slice(1)}`);
+  }
+
   function run({ command, options }, n, event) {
     try {
       const result = Vimov.actions[command](n, options, event);
-      result?.catch?.((err) => ui.message(`${command}: ${err.message}`));
+      result?.catch?.((err) => failed(command, options, err));
     } catch (err) {
-      console.error('Vimov:', err);
-      ui.message(`${command}: ${err.message}`);
+      failed(command, options, err);
     }
   }
 

@@ -19,13 +19,17 @@
   const bookmark = (id, title, url, dateAdded = 0) => ({ id, type: 'bookmark', title, url, dateAdded });
   const folder = (id, title, children) => ({ id, type: 'folder', title, children });
   const daysAgo = (days) => Date.now() - days * 24 * 60 * 60 * 1000;
+  const MAIL_ICON = `data:image/svg+xml,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="10" rx="2" fill="#2563eb"/><path d="M2 4.5l6 4.5 6-4.5" fill="none" stroke="#fff" stroke-width="1.4"/></svg>',
+  )}`;
   const fake = {
     current: { id: 1, index: 0, windowId: 1, incognito: false },
     tabs: [
-      { id: 1, windowId: 1, title: 'Vimov playground', url: location.href, lastAccessed: 50, incognito: false },
+      { id: 1, windowId: 1, title: document.title, url: location.href, lastAccessed: 50, incognito: false },
       { id: 2, windowId: 1, title: 'codexjdub/vimov: Vim-style keyboard browsing', url: 'https://github.com/codexjdub/vimov', lastAccessed: 40, incognito: false },
       { id: 3, windowId: 2, title: 'Array.prototype.map() - JavaScript | MDN', url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map', lastAccessed: 30, incognito: false },
-      { id: 4, windowId: 1, title: 'Inbox (3) - Mail', url: 'https://mail.example.com/inbox', lastAccessed: 45, incognito: false },
+      // An icon as Firefox gives one, a data: URL, to show it in the vbar.
+      { id: 4, windowId: 1, title: 'Inbox (3) - Mail', url: 'https://mail.example.com/inbox', lastAccessed: 45, incognito: false, favIconUrl: MAIL_ICON },
       { id: 5, windowId: 3, title: 'Private tab', url: 'https://private.example.com/', lastAccessed: 60, incognito: true },
     ],
     tree: [

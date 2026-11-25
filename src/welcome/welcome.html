@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Welcome to Vimov</title>
+  <link rel="stylesheet" href="../options/options.css">
+  <link rel="stylesheet" href="welcome.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Welcome to Vimov</h1>
+      <p class="lede">Browse with Vim-style keys. Vimov is on in every tab now, the ones that were already open too.</p>
+    </header>
+
+    <section>
+      <h2>Start here</h2>
+      <ul class="tips">
+        <li><kbd>?</kbd> on any web page lists every key, your own mappings included.</li>
+        <li><kbd>f</kbd> puts a label on each link; type it to click.</li>
+        <li><kbd>o</kbd> opens the vbar, one box for tabs, bookmarks, history and the web.</li>
+        <li><kbd>j</kbd> <kbd>k</kbd> scroll, <kbd>/</kbd> finds in the page, <kbd>Esc</kbd> cancels.</li>
+      </ul>
+      <p class="help-text">The keys work on web pages. Firefox doesn’t run extensions on its own pages (this one, the new tab page, <code>about:</code> pages), on addons.mozilla.org, in the PDF viewer or in Reader View. From those, type <code>v</code> and a space in the address bar to search like the vbar.</p>
+    </section>
+
+    <section>
+      <h2>Turn it off for a site</h2>
+      <p>The Vimov button on the toolbar turns Vimov off for the site you’re on, and back on. In the options you can list sites to leave alone, or pass only some keys to a site, such as a video player’s.</p>
+    </section>
+
+    <section>
+      <h2>Every key</h2>
+      <div class="reference" id="reference"></div>
+    </section>
+
+    <footer class="actions">
+      <button type="button" class="primary" id="options">Open the options</button>
+    </footer>
+  </main>
+
+  <script src="../shared/commands.js"></script>
+  <script src="../shared/defaults.js"></script>
+  <script src="../shared/keys.js"></script>
+  <script src="../shared/reference.js"></script>
+  <script src="welcome.js"></script>
+</body>
+</html>
