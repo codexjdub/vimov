@@ -7,7 +7,8 @@
 // and hints, which can't be remapped, come after.
 
 Vimov.keyReference = (() => {
-  // Commands that share a row when both are mapped, with the row's text.
+  // Commands that share a row when both are mapped, with the row's text
+  // (and its text with tabs down the side, where that differs).
   const PAIRS = [
     ['scrollDown', 'scrollUp', 'Scroll down / up'],
     ['scrollLeft', 'scrollRight', 'Scroll left / right'],
@@ -18,9 +19,9 @@ Vimov.keyReference = (() => {
     ['goBack', 'goForward', 'Go back / forward in history'],
     ['nextPage', 'previousPage', 'Follow the link to the next / previous page'],
     ['findNext', 'findPrevious', 'Go to the next / previous match'],
-    ['nextTab', 'previousTab', 'Go one tab right / left'],
+    ['nextTab', 'previousTab', 'Go one tab right / left', 'Go one tab down / up'],
     ['firstTab', 'lastTab', 'Go to the first / last tab'],
-    ['moveTabLeft', 'moveTabRight', 'Move the tab left / right'],
+    ['moveTabLeft', 'moveTabRight', 'Move the tab left / right', 'Move the tab up / down'],
   ];
 
   // Keys inside Vimov's own boxes. Each row: groups of keys (a slash between
@@ -60,11 +61,12 @@ Vimov.keyReference = (() => {
 
   // [{ category, rows: [{ groups: [[key, …], …], description }] }], with rows
   // in command-registry order. Keys are written in Vimov's notation (gg, <c-j>).
-  function build(bindings) {
+  // `layout` is { verticalTabs }, as for buildKeymap().
+  function build(bindings, layout = {}) {
     const rows = [];
     const byId = new Map();
     for (const { keys, command, options } of bindings.values()) {
-      const description = Vimov.describeCommand(command, options);
+      const description = Vimov.describeCommand(command, options, layout);
       const id = `${command}\n${description}`;
       if (!byId.has(id)) {
         const row = { command, options, description, groups: [[]] };
@@ -80,10 +82,10 @@ Vimov.keyReference = (() => {
       first.description = description;
       rows.splice(rows.indexOf(second), 1);
     };
-    for (const [a, b, description] of PAIRS) {
+    for (const [a, b, description, vertical] of PAIRS) {
       const first = plain(a);
       const second = plain(b);
-      if (first && second) merge(first, second, description);
+      if (first && second) merge(first, second, (layout.verticalTabs && vertical) || description);
     }
     for (const second of rows.filter((r) => r.options.newTab === true)) {
       const first = rows.find((r) => r !== second && r.command === second.command && !r.options.newTab && sameBut(r.options) === sameBut(second.options));

@@ -13,19 +13,24 @@
   // handled: 'consume' blocks them entirely, 'shield' only hides them from the page.
   const followups = new Map();
 
-  function applySettings(stored) {
+  // `local` holds what the background page read of Firefox's own settings.
+  function applySettings(stored, local = {}) {
     const defaults = Vimov.DEFAULT_SETTINGS;
     const settings = { ...defaults, ...stored };
     settings.hintChars = Vimov.normalizeHintChars(settings.hintChars) || defaults.hintChars;
     settings.scrollStep = Math.max(1, Number(settings.scrollStep) || defaults.scrollStep);
     state.settings = settings;
-    state.keymap = keys.buildKeymap(settings.keymap);
+    state.layout = { verticalTabs: Vimov.verticalTabs(settings, local.firefoxVerticalTabs) };
+    state.keymap = keys.buildKeymap(settings.keymap, state.layout);
     state.exclusions = keys.parseExclusions(settings.exclusions).rules;
     state.exclusionUrl = null;
   }
 
   function loadSettings() {
-    browser.storage.sync.get(Vimov.DEFAULT_SETTINGS).then(applySettings, () => applySettings({}));
+    Promise.all([
+      browser.storage.sync.get(Vimov.DEFAULT_SETTINGS),
+      browser.storage.local.get({ firefoxVerticalTabs: false }),
+    ]).then(([stored, local]) => applySettings(stored, local), () => applySettings({}));
   }
 
   // The exclusion rule for this page, if any. Single-page apps change the URL
@@ -52,7 +57,7 @@
       if (seq.length <= pending.length || pending.some((key, i) => seq[i] !== key)) continue;
       const key = Vimov.keyReference.text([...pending, seq[pending.length]].join(''));
       const complete = seq.length === pending.length + 1;
-      if (complete) next.set(key, Vimov.describeCommand(command, options));
+      if (complete) next.set(key, Vimov.describeCommand(command, options, state.layout));
       else if (!next.has(key)) next.set(key, '…');
     }
     return [...next].map(([key, description]) => ({ key, description }));
@@ -96,7 +101,7 @@
   // the help ("Couldn’t reload the page"); the details go to the console.
   function failed(command, options, err) {
     console.error('Vimov:', err);
-    const what = Vimov.describeCommand(command, options);
+    const what = Vimov.describeCommand(command, options, state.layout);
     ui.message(`Couldn’t ${what[0].toLowerCase()}${what.slice(1)}`);
   }
 
@@ -197,7 +202,7 @@
 
   loadSettings();
   browser.storage.onChanged.addListener((changes, area) => {
-    if (area === 'sync') loadSettings();
+    if (area === 'sync' || (area === 'local' && changes.firefoxVerticalTabs)) loadSettings();
   });
   // The vbar, asked for from an iframe in this tab.
   browser.runtime.onMessage.addListener((message) => {

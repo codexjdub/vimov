@@ -7,7 +7,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { SHARED, load, run, event } = require('./helpers');
 
-async function setup(stored = {}) {
+async function setup(stored = {}, local = {}) {
   const listeners = {};
   const body = { localName: 'body' };
   const field = { localName: 'input', blur() {} };
@@ -15,11 +15,16 @@ async function setup(stored = {}) {
   const ran = [];
   const messages = [];
   const next = []; // what the list of keys that can follow showed, each time
+  const onChanged = event();
   const ctx = load(SHARED, {
     console: { ...console, error() {} }, // failures are logged; keep test output clean
     document: { querySelector: (selector) => (page.viewer && selector === 'largitude-popup:popover-open' ? {} : null) },
     browser: {
-      storage: { sync: { get: async (defaults) => ({ ...defaults, ...stored }) }, onChanged: event() },
+      storage: {
+        sync: { get: async (defaults) => ({ ...defaults, ...stored }) },
+        local: { get: async (defaults) => ({ ...defaults, ...local }) },
+        onChanged,
+      },
       runtime: { onMessage: event(), sendMessage: async () => ({}) },
     },
     location: { href: 'https://example.com/' },
@@ -52,7 +57,13 @@ async function setup(stored = {}) {
     return e;
   };
   const press = (key, code, options) => [fire('keydown', key, code, options), fire('keypress', key, code, options), fire('keyup', key, code, options)];
-  return { fire, press, page, body, field, ran, messages, next };
+  // Storage changing elsewhere: the options page, or the background page.
+  const change = async (area, values) => {
+    Object.assign(area === 'local' ? local : stored, values);
+    await onChanged.fire(Object.fromEntries(Object.entries(values).map(([k, v]) => [k, { newValue: v }])), area);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  };
+  return { fire, press, page, body, field, ran, messages, next, change };
 }
 
 test('a mapped key runs its command and is hidden from the page', async () => {
@@ -153,4 +164,37 @@ test('a key that starts a longer sequence is listed with an ellipsis', async () 
   press('g', 'KeyG');
   await new Promise((resolve) => setTimeout(resolve, 600));
   assert(next.at(-1).some((row) => row.key === 'gx' && row.description === '…'));
+});
+
+test('with tabs down the side, J goes to the next tab and K to the previous one', async () => {
+  const { press, ran } = await setup({ tabLayout: 'side' });
+  press('J', 'KeyJ', { shiftKey: true });
+  press('K', 'KeyK', { shiftKey: true });
+  assert.deepStrictEqual(ran, ['nextTab:1', 'previousTab:1']);
+});
+
+test('your own J and K mappings win over the tab layout', async () => {
+  const { press, ran } = await setup({ tabLayout: 'side', keymap: 'map J previousTab' });
+  press('J', 'KeyJ', { shiftKey: true });
+  assert.deepStrictEqual(ran, ['previousTab:1']);
+});
+
+test('following Firefox, J and K switch when Firefox\'s layout does', async () => {
+  const { press, ran, change } = await setup({ tabLayout: 'firefox' }, { firefoxVerticalTabs: false });
+  press('J', 'KeyJ', { shiftKey: true });
+  await change('local', { firefoxVerticalTabs: true });
+  press('J', 'KeyJ', { shiftKey: true });
+  // Firefox's layout counts only when you chose to follow it.
+  await change('sync', { tabLayout: 'top' });
+  press('J', 'KeyJ', { shiftKey: true });
+  assert.deepStrictEqual(ran, ['previousTab:1', 'nextTab:1', 'previousTab:1']);
+});
+
+test('the keys that can follow g describe tab commands in the layout\'s words', async () => {
+  const { press, next } = await setup({ tabLayout: 'side' });
+  press('g', 'KeyG');
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  const rows = Object.fromEntries(next.at(-1).map((r) => [r.key, r.description]));
+  assert.strictEqual(rows.gt, 'Go one tab down');
+  assert.strictEqual(rows.gT, 'Go one tab up');
 });

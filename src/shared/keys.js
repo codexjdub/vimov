@@ -185,10 +185,12 @@ Vimov.keys = (() => {
 
   // The default mappings with the user's lines applied on top. Bindings are
   // keyed by their keys joined with spaces ("g g").
-  function buildKeymap(userText = '') {
+  // `layout` is { verticalTabs }: with tabs down the side, J and K swap.
+  function buildKeymap(userText = '', layout = {}) {
     const bindings = new Map();
     const defaultErrors = [];
     applyKeymap(Vimov.DEFAULT_KEYMAP, bindings, defaultErrors);
+    if (layout.verticalTabs) applyKeymap(Vimov.VERTICAL_TABS_KEYMAP, bindings, defaultErrors);
     if (defaultErrors.length) console.error('Vimov: bad default keymap', defaultErrors);
 
     const errors = [];

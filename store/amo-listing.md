@@ -60,7 +60,7 @@ Vimov lets you browse without reaching for the mouse, using keys borrowed from V
 
 <b>Tabs</b>
 <ul>
-<li>K and J (or gt and gT) for the next and previous tab, g0 and g$ for the first and last</li>
+<li>K and J (or gt and gT) for the next and previous tab, g0 and g$ for the first and last. With vertical tabs, J goes down to the next tab and K up: pick it in the options, or follow Firefox's setting</li>
 <li>t, x, X and yt to open, close, reopen and duplicate tabs</li>
 </ul>
 

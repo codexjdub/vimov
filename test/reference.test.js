@@ -50,3 +50,12 @@ test('keys are shown as people write them', () => {
     ['gg', 'Alt+P', 'Ctrl+J', 'Shift+Enter', 'Ctrl+Shift+D', 'Ctrl+-', 'g Ctrl+D', '<<', '?', 'Esc', 'F5'],
   );
 });
+
+test('with tabs down the side, J and K swap and the words say down and up', () => {
+  const layout = { verticalTabs: true };
+  const sections = plain(Vimov.keyReference.build(Vimov.keys.buildKeymap('', layout).bindings, layout));
+  assert.deepStrictEqual(row(sections, 'Go one tab down / up').groups, [['J', 'gt'], ['K', 'gT']]);
+  assert(row(sections, 'Move the tab up / down'));
+  assert.strictEqual(Vimov.describeCommand('nextTab', {}, layout), 'Go one tab down');
+  assert.strictEqual(Vimov.describeCommand('nextTab'), 'Go one tab right');
+});

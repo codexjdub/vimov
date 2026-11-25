@@ -12,9 +12,11 @@ function setup({
   exclusions = '',
   clipboard = '',
   tabs = [{ id: 1, index: 0, windowId: 1, active: true, url: 'https://example.com/' }],
+  browserSettings, // present once the optional permission is granted
 } = {}) {
   const opened = [];
   const stored = { exclusions };
+  const local = {};
   const button = {}; // tab id → { enabled, badge, title }
   const show = (tabId, change) => (button[tabId] = { ...button[tabId], ...change });
   const browser = {
@@ -32,7 +34,13 @@ function setup({
       onActivated: event(),
       onUpdated: event(),
     },
+    permissions: { onAdded: event(), onRemoved: event() },
+    browserSettings,
     storage: {
+      local: {
+        get: async (defaults) => ({ ...defaults, ...local }),
+        set: async (values) => Object.assign(local, values),
+      },
       sync: {
         get: async (defaults) => ({ ...defaults, ...stored }),
         set: async (values) => {
@@ -59,7 +67,7 @@ function setup({
     open: async (result, options) => opened.push([result, options]),
   };
   run(ctx, ['src/background.js']);
-  return { browser, opened, stored, button };
+  return { browser, opened, stored, local, button };
 }
 
 const tabResult = (url, title = url) => ({ type: 'tab', id: 7, windowId: 1, url, title });
@@ -216,4 +224,36 @@ test('a first install opens the welcome page; updates and temporary loads don\'t
     assert.deepStrictEqual(plain(opened), expected);
     assert.strictEqual(button[1].enabled, true);
   }
+});
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+test('Firefox\'s tab layout is kept for content scripts, and followed as it changes', async () => {
+  const setting = { value: true, onChange: event(), get: async () => ({ value: setting.value }) };
+  const { local } = setup({ browserSettings: { verticalTabs: setting } });
+  await tick();
+  assert.strictEqual(local.firefoxVerticalTabs, true);
+  setting.value = false;
+  await setting.onChange.fire({ value: false });
+  assert.strictEqual(local.firefoxVerticalTabs, false);
+});
+
+test('without the permission, or on a Firefox that can\'t tell, tabs count as across the top', async () => {
+  for (const browserSettings of [undefined, {}]) {
+    const { local } = setup({ browserSettings });
+    await tick();
+    assert.notStrictEqual(local.firefoxVerticalTabs, true);
+  }
+  // Granted later: read at once, and listened to from then on.
+  const { browser, local } = setup();
+  await tick();
+  const setting = { value: true, onChange: event(), get: async () => ({ value: setting.value }) };
+  browser.browserSettings = { verticalTabs: setting };
+  await browser.permissions.onAdded.fire({ permissions: ['browserSettings'] });
+  assert.strictEqual(local.firefoxVerticalTabs, true);
+  assert.strictEqual(setting.onChange.listeners.length, 1);
+  // Taken away in about:addons: back to across the top.
+  delete browser.browserSettings;
+  await browser.permissions.onRemoved.fire({ permissions: ['browserSettings'] });
+  assert.strictEqual(local.firefoxVerticalTabs, false);
 });

@@ -125,6 +125,16 @@ textarea:focus, input:focus-visible, button:focus-visible, summary:focus-visible
   margin: 10px 0;
 }
 
+.choices .field {
+  flex-wrap: nowrap;
+  align-items: baseline;
+  margin: 6px 0;
+}
+
+.choices .help-text {
+  display: block;
+}
+
 .help-text {
   color: var(--muted);
   font-size: 13px;

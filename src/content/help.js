@@ -29,7 +29,7 @@ Vimov.help = (() => {
     header.append(el('h1', '', 'Vimov'), el('span', 'note', 'Esc to close'), options);
 
     const columns = el('div', 'columns');
-    for (const { category, rows } of Vimov.keyReference.build(Vimov.state.keymap.bindings)) {
+    for (const { category, rows } of Vimov.keyReference.build(Vimov.state.keymap.bindings, Vimov.state.layout)) {
       const section = el('section');
       section.append(el('h2', '', category));
       for (const row of rows) {

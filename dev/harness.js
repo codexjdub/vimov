@@ -117,6 +117,8 @@
     search: { get: async () => fake.engines },
     topSites: { get: async () => fake.topSites },
     storage: {
+      // What the background page reads of Firefox's settings: nothing here.
+      local: { get: async (defaults) => ({ ...defaults }), set: async () => {} },
       sync: {
         get: async (defaults) => ({ ...defaults, ...stored() }),
         set: async (values) => localStorage.setItem('vimov-harness-settings', JSON.stringify({ ...stored(), ...values })),

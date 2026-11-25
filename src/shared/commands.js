@@ -86,16 +86,17 @@ globalThis.Vimov = globalThis.Vimov || {};
       options: { in: Object.keys(SEARCH_SOURCES), newTab: 'boolean' },
     },
 
-    nextTab: { category: 'Tabs', description: 'Go one tab right' },
-    previousTab: { category: 'Tabs', description: 'Go one tab left' },
+    // `vertical`: the description with tabs down the side.
+    nextTab: { category: 'Tabs', description: 'Go one tab right', vertical: 'Go one tab down' },
+    previousTab: { category: 'Tabs', description: 'Go one tab left', vertical: 'Go one tab up' },
     firstTab: { category: 'Tabs', description: 'Go to the first tab' },
     lastTab: { category: 'Tabs', description: 'Go to the last tab' },
     newTab: { category: 'Tabs', description: 'Open a new tab' },
     closeTab: { category: 'Tabs', description: 'Close the tab' },
     restoreTab: { category: 'Tabs', description: 'Reopen the last closed tab' },
     duplicateTab: { category: 'Tabs', description: 'Duplicate the tab' },
-    moveTabLeft: { category: 'Tabs', description: 'Move the tab left' },
-    moveTabRight: { category: 'Tabs', description: 'Move the tab right' },
+    moveTabLeft: { category: 'Tabs', description: 'Move the tab left', vertical: 'Move the tab up' },
+    moveTabRight: { category: 'Tabs', description: 'Move the tab right', vertical: 'Move the tab down' },
     togglePinTab: { category: 'Tabs', description: 'Pin or unpin the tab' },
 
     showHelp: { category: 'Other', description: 'Show this help' },
@@ -107,8 +108,10 @@ globalThis.Vimov = globalThis.Vimov || {};
   Vimov.SEARCH_SYMBOLS = SEARCH_SYMBOLS;
   Vimov.CATEGORIES = ['Scrolling', 'Page', 'Links', 'Find', 'Search', 'Tabs', 'Other'];
 
-  Vimov.describeCommand = (name, options = {}) => {
-    const { description } = COMMANDS[name] || {};
+  // `layout` is { verticalTabs }, for the words of the tab commands.
+  Vimov.describeCommand = (name, options = {}, layout = {}) => {
+    const { description, vertical } = COMMANDS[name] || {};
+    if (layout.verticalTabs && vertical) return vertical;
     if (!description) return name;
     return typeof description === 'function' ? description(options) : description;
   };

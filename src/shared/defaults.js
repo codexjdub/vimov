@@ -67,13 +67,27 @@ map <a-p> togglePinTab
 map ? showHelp
 `;
 
+// With tabs down the side, J goes down to the next tab and K up to the
+// previous one. Applied on top of DEFAULT_KEYMAP, under the user's lines.
+Vimov.VERTICAL_TABS_KEYMAP = `map J nextTab
+map K previousTab
+`;
+
 Vimov.DEFAULT_SETTINGS = {
   keymap: '',
   exclusions: '',
   hintChars: 'sadfjklewcmpgh',
   scrollStep: 60,
   smoothScroll: true,
+  // Which way J and K go: 'top' (tabs across the top), 'side' (down the
+  // side) or 'firefox' (whichever Firefox shows; see src/background.js).
+  tabLayout: 'top',
 };
+
+// Whether tabs run down the side, from the settings and, for 'firefox',
+// what the background page last read from Firefox.
+Vimov.verticalTabs = (settings, firefoxVertical) =>
+  settings.tabLayout === 'side' || (settings.tabLayout === 'firefox' && firefoxVertical === true);
 
 // Lower-cases and de-duplicates hint characters. Returns null when fewer than
 // two remain.
