@@ -115,6 +115,17 @@ take them again with `sh dev/screenshots.sh` when the UI changes.
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.6.0)
+
+```
+- Pause after the first key of a sequence, such as g, and the keys that can follow it are listed in the corner of the page.
+- A shorter help (?): opposite commands share a row, as in j / k, and the keys that work inside the vbar, find and link hints are listed too.
+- The vbar shows each site's icon when Firefox already has it from your open tabs or top sites, and its first letter otherwise. Vimov never downloads icons.
+- A first install opens a welcome page with the keys to start with.
+- After an update, anything the old version left open on a page, such as the vbar or find highlights, is cleared.
+- When a command fails, Vimov says so in plain words ("Couldn’t reload the page") rather than with a technical error.
+```
+
 ## Version notes (0.5.2)
 
 ```
