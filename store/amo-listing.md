@@ -115,6 +115,16 @@ take them again with `sh dev/screenshots.sh` when the UI changes.
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.8.1)
+
+```
+- Link hint labels sit just in front of their links instead of covering the first letters, so you can read what each one is for.
+- If you scroll with the mouse or trackpad while labels are showing, they move with their links.
+- Holding j, k, h or l flows straight from the first step into a smooth glide and eases to a stop when you let go, without the pause there used to be.
+- In the help, the header stays in place while you scroll, and the bottom fades while there's more below.
+- Sites without an icon in the vbar get a softly tinted letter, and messages in the corner fade out instead of vanishing.
+```
+
 ## Version notes (0.8.0)
 
 ```
