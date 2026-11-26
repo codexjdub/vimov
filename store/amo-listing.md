@@ -122,7 +122,7 @@ take them again with `sh dev/screenshots.sh` when the UI changes.
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
-## Version notes (0.9.0)
+## Version notes (0.9.1)
 
 ```
 - Link hint labels pop up as they appear, the ones you rule out shrink away as you type, and the one you pick sinks in.
