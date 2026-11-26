@@ -8,19 +8,64 @@ Vimov.ui = (() => {
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
 
-    .hud, .find {
+    /* One palette for every piece, light or dark with the system. The names
+       are prefixed so a page's own variables can't leak in. */
+    :host {
+      --vm-surface: #ffffff;
+      --vm-raised: #f4f4f5;
+      --vm-fg: #18181b;
+      --vm-muted: #71717a;
+      --vm-line: rgba(24, 24, 27, 0.07);
+      --vm-border: rgba(24, 24, 27, 0.12);
+      --vm-accent: #b45309;
+      --vm-mark: #f59e0b;
+      --vm-selected: rgba(24, 24, 27, 0.05);
+      --vm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.1);
+      --vm-shadow-lg: 0 1px 3px rgba(0, 0, 0, 0.05), 0 12px 28px rgba(0, 0, 0, 0.1), 0 32px 72px rgba(0, 0, 0, 0.14);
+      --vm-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --vm-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --vm-ease: cubic-bezier(0.2, 0, 0, 1);
+    }
+    @media (prefers-color-scheme: dark) {
+      :host {
+        --vm-surface: #1c1c1f;
+        --vm-raised: #2a2a2e;
+        --vm-fg: #f4f4f5;
+        --vm-muted: #a1a1aa;
+        --vm-line: rgba(255, 255, 255, 0.07);
+        --vm-border: rgba(255, 255, 255, 0.12);
+        --vm-accent: #fbbf24;
+        --vm-selected: rgba(255, 255, 255, 0.06);
+        --vm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
+        --vm-shadow-lg: 0 1px 3px rgba(0, 0, 0, 0.3), 0 12px 28px rgba(0, 0, 0, 0.35), 0 32px 72px rgba(0, 0, 0, 0.45);
+      }
+    }
+
+    /* Panels rise into place; the backdrop fades in. Nothing moves when the
+       system asks for less motion. */
+    @keyframes vimov-in { from { opacity: 0; transform: translateY(4px); } }
+    @keyframes vimov-appear { from { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .hud, .next, .find, .backdrop, .help, .search { animation: none !important; }
+    }
+
+    /* The pieces in the corners: the mode line, the keys that can follow a
+       partly typed one, and the find bar. */
+    .hud, .next, .find {
       position: fixed;
       bottom: 12px;
-      padding: 5px 10px;
-      border-radius: 6px;
-      background: rgba(24, 24, 27, 0.94);
-      color: #f4f4f5;
-      font: 12px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--vm-border);
+      border-radius: 8px;
+      background: var(--vm-surface);
+      color: var(--vm-fg);
+      font: 12.5px/1.5 var(--vm-sans);
+      box-shadow: var(--vm-shadow-sm);
+      animation: vimov-in 140ms var(--vm-ease);
     }
     .hud {
       right: 12px;
       max-width: min(70vw, 640px);
+      padding: 5px 11px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -31,50 +76,45 @@ Vimov.ui = (() => {
     .hud::after { content: attr(data-text); }
     /* In a narrow window the find bar's keys go above the bar, not beside it. */
     @media (max-width: 860px) {
-      .hud:has(~ .find) { bottom: 46px; left: 12px; right: auto; }
+      .hud:has(~ .find) { bottom: 50px; left: 12px; right: auto; }
     }
 
     .next {
-      position: fixed;
       right: 12px;
-      bottom: 46px;
+      bottom: 50px;
       display: grid;
       grid-template-columns: auto 1fr;
-      gap: 1px 12px;
+      gap: 2px 14px;
       max-width: min(60vw, 420px);
-      padding: 7px 12px;
-      border-radius: 6px;
-      background: rgba(24, 24, 27, 0.94);
-      color: #d4d4d8;
-      font: 12px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      padding: 8px 12px;
       pointer-events: none;
     }
-    .next .key { color: #fbbf24; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .next .key { color: var(--vm-accent); font: 500 12px/1.55 var(--vm-mono); }
     .next .key::after, .next .what::after { content: attr(data-text); }
 
+    /* Hint labels keep one look on every page, light or dark: the page's
+       colors, not the system's, are what they sit on. */
     .hint {
       position: fixed;
-      padding: 1px 4px;
-      border: 1px solid #c38a22;
-      border-radius: 3px;
-      background: linear-gradient(#fff785, #ffc542);
-      color: #302505;
-      font: bold 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      letter-spacing: 0.5px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: #fbbf24;
+      color: #1c1407;
+      font: 650 11px/1.35 var(--vm-sans);
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       white-space: nowrap;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 0 0 1px rgba(120, 53, 15, 0.45), 0 2px 6px rgba(0, 0, 0, 0.22);
       pointer-events: none;
     }
     .hint .typed { opacity: 0.4; }
 
     .flash {
       position: fixed;
-      border-radius: 3px;
-      outline: 2px solid #f59e0b;
+      border-radius: 4px;
+      outline: 2px solid var(--vm-mark);
       outline-offset: 1px;
-      background: rgba(245, 158, 11, 0.18);
+      background: rgba(245, 158, 11, 0.16);
       pointer-events: none;
       animation: vimov-fade 320ms ease-out forwards;
     }
@@ -85,18 +125,19 @@ Vimov.ui = (() => {
       display: flex;
       align-items: center;
       gap: 8px;
-      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      padding: 5px 11px;
+      font-size: 13px;
     }
-    .find::before { content: "/"; color: #fbbf24; }
+    .find::before { content: "/"; color: var(--vm-accent); font: 600 13px/1.5 var(--vm-mono); }
     .find input {
       all: unset;
       width: 36ch;
       max-width: 60vw;
       color: inherit;
       font: inherit;
-      caret-color: #fbbf24;
+      caret-color: var(--vm-accent);
     }
-    .find .count { color: #a1a1aa; font-size: 12px; }
+    .find .count { color: var(--vm-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
     .find .count::after { content: attr(data-text); }
 
     .backdrop {
@@ -106,128 +147,115 @@ Vimov.ui = (() => {
       align-items: center;
       justify-content: center;
       padding: 24px 16px;
-      background: rgba(9, 9, 11, 0.4);
+      background: rgba(9, 9, 11, 0.28);
+      animation: vimov-appear 120ms ease-out;
     }
     .backdrop.top { align-items: flex-start; padding-top: 12vh; }
     .help, .search {
-      --bg: #ffffff;
-      --fg: #18181b;
-      --muted: #71717a;
-      --line: #e4e4e7;
-      --key: #f4f4f5;
-      --accent: #b45309;
-      --selected: #fef3c7;
+      max-height: 100%;
+      border: 1px solid var(--vm-border);
+      border-radius: 14px;
+      background: var(--vm-surface);
+      color: var(--vm-fg);
+      box-shadow: var(--vm-shadow-lg);
+      animation: vimov-in 160ms var(--vm-ease);
     }
-    @media (prefers-color-scheme: dark) {
-      .help, .search {
-        --bg: #18181b;
-        --fg: #f4f4f5;
-        --muted: #a1a1aa;
-        --line: #333338;
-        --key: #27272a;
-        --accent: #fbbf24;
-        --selected: #3a3220;
-      }
+    .help kbd, .search kbd {
+      display: inline-block;
+      min-width: 1.75em;
+      padding: 0 5px;
+      border: 1px solid var(--vm-border);
+      border-radius: 4px;
+      background: var(--vm-raised);
+      color: var(--vm-fg);
+      font: 11.5px/1.6 var(--vm-mono);
+      text-align: center;
     }
+
     .help {
       width: min(880px, 100%);
-      max-height: 100%;
       overflow: auto;
-      padding: 20px 24px 8px;
-      border-radius: 12px;
-      background: var(--bg);
-      color: var(--fg);
-      font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      padding: 22px 26px 10px;
+      font: 13px/1.45 var(--vm-sans);
     }
-    .help header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-    .help h1 { margin: 0; font-size: 18px; font-weight: 650; }
-    .help .note { margin-left: auto; color: var(--muted); }
+    .help header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .help h1 { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+    .help .note { margin-left: auto; color: var(--vm-muted); }
     .help .filter {
       all: unset;
       width: 18ch;
-      padding: 3px 10px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
+      padding: 4px 10px;
+      border: 1px solid var(--vm-border);
+      border-radius: 8px;
       color: inherit;
       font: inherit;
-      caret-color: var(--accent);
+      caret-color: var(--vm-accent);
     }
-    .help .filter::placeholder { color: var(--muted); }
-    .help .filter:focus { border-color: var(--accent); }
-    .help .none { margin: 8px 0 16px; color: var(--muted); }
+    .help .filter::placeholder { color: var(--vm-muted); }
+    .help .filter:focus { border-color: var(--vm-mark); box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2); }
+    .help .none { margin: 8px 0 16px; color: var(--vm-muted); }
     .help button {
-      font: inherit;
+      padding: 4px 12px;
+      border: 1px solid var(--vm-border);
+      border-radius: 8px;
+      background: var(--vm-raised);
       color: inherit;
-      background: var(--key);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 3px 10px;
+      font: inherit;
       cursor: pointer;
     }
-    .help .columns { columns: 2 300px; column-gap: 32px; }
-    .help section { break-inside: avoid; margin-bottom: 16px; }
+    .help button:hover { border-color: var(--vm-muted); }
+    .help .columns { columns: 2 300px; column-gap: 36px; }
+    .help section { break-inside: avoid; margin-bottom: 18px; }
     .help h2 {
-      margin: 0 0 4px;
-      color: var(--muted);
+      margin: 0 0 6px;
+      color: var(--vm-muted);
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
-    .help .row { display: flex; gap: 12px; padding: 3px 0; border-bottom: 1px solid var(--line); }
-    .help .keys { flex: 0 0 132px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
-    .help .or { color: var(--muted); }
-    .help kbd, .search kbd {
-      padding: 0 5px;
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      background: var(--key);
-      font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    }
+    .help .row { display: flex; gap: 12px; padding: 4px 0; border-bottom: 1px solid var(--vm-line); }
+    .help .row:last-child { border-bottom: 0; }
+    .help .keys { flex: 0 0 136px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+    .help .or { color: var(--vm-muted); }
 
     .search {
       display: flex;
       flex-direction: column;
       width: min(640px, 100%);
-      max-height: 100%;
       overflow: hidden;
-      border-radius: 12px;
-      background: var(--bg);
-      color: var(--fg);
-      font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      font: 14px/1.4 var(--vm-sans);
     }
     .search input {
       all: unset;
       display: block;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--line);
+      padding: 15px 18px;
+      border-bottom: 1px solid var(--vm-line);
       color: inherit;
-      font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
-      caret-color: var(--accent);
+      font: 16px/1.4 var(--vm-sans);
+      caret-color: var(--vm-accent);
     }
-    .search input::placeholder { color: var(--muted); }
+    .search input::placeholder { color: var(--vm-muted); }
     .search .results { margin: 0; padding: 6px; overflow: auto; list-style: none; }
     .search .result {
+      position: relative;
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 6px 10px;
+      padding: 7px 12px;
       border-radius: 8px;
       cursor: pointer;
     }
-    .search .result.selected { background: var(--selected); }
-    /* A fixed width, so the icons and titles line up on every row. */
-    .search .tag {
-      flex: 0 0 76px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+    .search .result.selected { background: var(--vm-selected); }
+    .search .result.selected::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 9px;
+      bottom: 9px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--vm-mark);
     }
     .search .icon {
       flex: 0 0 16px;
@@ -240,13 +268,13 @@ Vimov.ui = (() => {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--line);
-      color: var(--muted);
+      background: var(--vm-raised);
+      color: var(--vm-muted);
       font-size: 10px;
       font-weight: 700;
       line-height: 1;
     }
-    .search .icon.glyph { color: var(--muted); }
+    .search .icon.glyph { color: var(--vm-muted); }
     .search .icon svg {
       display: block;
       width: 16px;
@@ -257,18 +285,20 @@ Vimov.ui = (() => {
       stroke-linecap: round;
       stroke-linejoin: round;
     }
-    .search .text { display: flex; flex-direction: column; min-width: 0; }
+    .search .text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
     .search .title, .search .detail { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .search .detail { color: var(--muted); font-size: 12px; }
-    .search b { color: var(--accent); font-weight: 650; }
-    .search .empty { padding: 12px 16px; color: var(--muted); }
+    .search .detail { color: var(--vm-muted); font-size: 12px; }
+    .search b { color: var(--vm-fg); font-weight: 650; }
+    /* What a result is, quietly, at the end of its row. */
+    .search .tag { flex: none; color: var(--vm-muted); font-size: 12px; }
+    .search .empty { padding: 14px 18px; color: var(--vm-muted); }
     .search .footer {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px 12px;
-      padding: 8px 16px;
-      border-top: 1px solid var(--line);
-      color: var(--muted);
+      gap: 6px 14px;
+      padding: 9px 18px;
+      border-top: 1px solid var(--vm-line);
+      color: var(--vm-muted);
       font-size: 12px;
     }
   `;

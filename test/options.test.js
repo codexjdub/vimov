@@ -36,6 +36,7 @@ async function setup(initial, { vertical = false } = {}) {
     },
     addEventListener() {},
     browser: {
+      runtime: { getManifest: () => ({ version: '0.6.0' }) },
       permissions: {
         contains: async () => permission.granted,
         request: async () => {

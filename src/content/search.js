@@ -110,7 +110,7 @@ Vimov.search = (() => {
     const detailLine = result.type === 'web' ? el('span', '', detail) : marked(detail, words);
     detailLine.className = 'detail';
     text.append(titleLine, detailLine);
-    item.append(el('span', `tag ${result.type}`, TAGS[result.type]), icon(result), text);
+    item.append(icon(result), text, el('span', `tag ${result.type}`, TAGS[result.type]));
     return item;
   }
 

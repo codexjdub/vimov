@@ -10,6 +10,8 @@
   --accent-fg: #ffffff;
   --error: #b91c1c;
   --warning: #92400e;
+  /* Checkboxes and radio buttons in the accent, not the system's blue. */
+  accent-color: var(--accent);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,7 +44,9 @@ main {
 
 h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
 }
 
 .lede {
@@ -50,17 +54,43 @@ h1 {
   color: var(--muted);
 }
 
+/* The icon beside the name, at the top of the options and welcome pages. */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.brand img {
+  flex: none;
+}
+
+.brand .lede {
+  margin: 2px 0 0;
+}
+
+.version {
+  margin-left: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
 section {
-  margin-bottom: 16px;
-  padding: 18px 20px;
+  margin-bottom: 14px;
+  padding: 20px 22px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--panel);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 h2 {
-  margin: 0 0 4px;
-  font-size: 16px;
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 p {
@@ -82,7 +112,7 @@ pre {
   margin: 8px 0 0;
   padding: 12px;
   overflow: auto;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--code);
   font-size: 12.5px;
 }
@@ -90,7 +120,7 @@ pre {
 textarea, input[type="text"], input[type="number"] {
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg);
   color: inherit;
   font-size: 13px;
@@ -112,7 +142,15 @@ input[type="number"] {
   width: 9ch;
 }
 
-textarea:focus, input:focus-visible, button:focus-visible, summary:focus-visible {
+/* Text fields take a soft ring in the accent; buttons and the rest an
+   outline, from the keyboard only. */
+textarea:focus, input[type="text"]:focus, input[type="number"]:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+input:focus-visible, button:focus-visible, summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
@@ -215,11 +253,15 @@ th {
 button {
   padding: 7px 14px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--panel);
   color: inherit;
   font: inherit;
   cursor: pointer;
+}
+
+button:not(:disabled):hover {
+  border-color: var(--muted);
 }
 
 button.primary {
@@ -229,9 +271,21 @@ button.primary {
   font-weight: 600;
 }
 
+button.primary:not(:disabled):hover {
+  border-color: transparent;
+  filter: brightness(1.08);
+}
+
 button:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* Nothing to save: a quiet button, not a faded orange one. */
+button.primary:disabled {
+  background: var(--code);
+  color: var(--muted);
+  opacity: 1;
 }
 
 #status {

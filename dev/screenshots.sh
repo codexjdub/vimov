@@ -1,6 +1,7 @@
 #!/bin/sh
 # Takes the store screenshots, store/screenshots/*.png at 1280×800, of
-# dev/demo.html with headless Chrome, in light mode.
+# dev/demo.html with headless Chrome, in light mode, with reduced motion so
+# no panel is caught halfway through appearing.
 #
 # Serve the repo first (node dev/serve.mjs), then: sh dev/screenshots.sh
 # CHROME=/path/to/chrome and PORT=8765 override the defaults.
@@ -27,7 +28,7 @@ for shot in hints vbar help find next; do
   "$CHROME" --headless=new --disable-gpu --no-first-run --no-default-browser-check \
     --disable-background-networking --disable-component-update --disable-sync \
     --user-data-dir="$PROFILE" --window-size=1280,800 --force-device-scale-factor=1 \
-    --hide-scrollbars --blink-settings=preferredColorScheme=1 --virtual-time-budget=5000 \
+    --hide-scrollbars --force-prefers-reduced-motion --blink-settings=preferredColorScheme=1 --virtual-time-budget=5000 \
     --screenshot="$out" "$URL?harness&shot=$shot" >/dev/null 2>&1
   echo "$out"
   n=$((n + 1))

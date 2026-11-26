@@ -1,5 +1,13 @@
 /* On top of the options page's styles. */
 
+.hero {
+  padding-top: 8px;
+}
+
+.hero h1 {
+  font-size: 30px;
+}
+
 kbd {
   display: inline-block;
   min-width: 1.4em;
@@ -44,9 +52,13 @@ h3 {
 .row {
   display: flex;
   gap: 12px;
-  padding: 3px 0;
+  padding: 4px 0;
   border-bottom: 1px solid var(--line);
   font-size: 13px;
+}
+
+.row:last-child {
+  border-bottom: 0;
 }
 
 .keys {

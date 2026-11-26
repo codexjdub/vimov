@@ -2,6 +2,8 @@
 
 const $ = (id) => document.getElementById(id);
 
+$('version').textContent = browser.runtime.getManifest().version;
+
 // The tab layout's radio buttons, as one field.
 const layoutRadios = [...document.querySelectorAll('input[name="tabLayout"]')];
 const layoutField = {
