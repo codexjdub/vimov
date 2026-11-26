@@ -115,6 +115,16 @@ take them again with `sh dev/screenshots.sh` when the UI changes.
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.7.0)
+
+```
+- A new look: one amber color throughout, flatter link-hint labels, a calmer vbar, softer panels that follow your system's light or dark mode, and a simpler icon. Panels appear with a short animation, which stays off when your system asks for less motion.
+- Using vertical tabs? Under Tabs in the options, choose tabs down the side, so J goes down to the next tab and K up to the previous one, or let Vimov follow Firefox's own setting (Firefox 142 and later).
+- Press / in the help (?) to filter the keys by what they do, by the keys themselves or by section.
+- Link hints and find list their keys in the corner of the page while they're open.
+- An empty vbar says why: no other open tabs, no bookmarks yet, or nothing matching in what you searched.
+```
+
 ## Version notes (0.6.0)
 
 ```
