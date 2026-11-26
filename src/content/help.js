@@ -57,12 +57,25 @@ Vimov.help = (() => {
     header.append(el('h1', '', 'Vimov'), filterBox, el('span', 'note', 'Esc to close'), options);
 
     const sections = Vimov.keyReference.build(Vimov.state.keymap.bindings, Vimov.state.layout);
+    // The rows scroll under the header. While there are more below, the
+    // bottom edge fades out to say so.
+    const scroller = el('div', 'body');
     const columns = el('div', 'columns');
-    const show = () => render(columns, Vimov.keyReference.filter(sections, filterBox.value), filterBox.value);
-    show();
-    panel.append(header, columns);
+    const fadeIfMore = () =>
+      scroller.classList.toggle('more', scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 1);
+    const show = () => {
+      render(columns, Vimov.keyReference.filter(sections, filterBox.value), filterBox.value);
+      fadeIfMore();
+    };
+    scroller.append(columns);
+    panel.append(header, scroller);
     backdrop.append(panel);
     ui.root().append(backdrop);
+    show();
+    scroller.addEventListener('scroll', fadeIfMore, { passive: true });
+    // The window changing size changes what fits.
+    const resized = new ResizeObserver(fadeIfMore);
+    resized.observe(scroller);
 
     let filtering = false; // typing goes into the filter box
     let tookFocus = false;
@@ -85,14 +98,15 @@ Vimov.help = (() => {
           }
           return false; // typed into the box
         }
-        const scrollKeys = { j: 60, k: -60, d: panel.clientHeight / 2, u: -panel.clientHeight / 2 };
+        const scrollKeys = { j: 60, k: -60, d: scroller.clientHeight / 2, u: -scroller.clientHeight / 2 };
         if (key === '/') filterBox.focus();
         else if (key === '<esc>' && filterBox.value) clearFilter();
         else if (key === '<esc>' || key === '?') Vimov.mode.exit(mode);
-        else if (key in scrollKeys) panel.scrollBy({ top: scrollKeys[key] });
+        else if (key in scrollKeys) scroller.scrollBy({ top: scrollKeys[key] });
         return true;
       },
       onExit() {
+        resized.disconnect();
         backdrop.remove();
         if (tookFocus) focused?.focus?.({ preventScroll: true });
       },
@@ -107,7 +121,7 @@ Vimov.help = (() => {
     // Keep typing in the box from reaching the page's own listeners.
     filterBox.addEventListener('input', (e) => {
       e.stopPropagation();
-      panel.scrollTop = 0;
+      scroller.scrollTop = 0;
       show();
     });
     backdrop.addEventListener('mousedown', (e) => {

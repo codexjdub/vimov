@@ -11,7 +11,7 @@ const { SHARED, load, run } = require('./helpers');
 function fakeElement(tag, className = '', text = '') {
   const node = {
     tag, className, textContent: text, value: '', children: [], listeners: {}, attributes: {},
-    clientHeight: 400, scrollTop: 0,
+    clientHeight: 400, scrollHeight: 400, scrollTop: 0, classList: { toggle() {} },
     append: (...kids) => node.children.push(...kids),
     replaceChildren: (...kids) => (node.children = kids),
     remove() {},
@@ -27,7 +27,11 @@ function fakeElement(tag, className = '', text = '') {
 
 function setup() {
   const made = [];
-  const ctx = load(SHARED, { browser: {}, document: { activeElement: null } });
+  const ctx = load(SHARED, {
+    browser: {},
+    document: { activeElement: null },
+    ResizeObserver: class { observe() {} disconnect() {} },
+  });
   const el = (...args) => {
     const node = fakeElement(...args);
     made.push(node);

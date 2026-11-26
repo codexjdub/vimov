@@ -71,15 +71,25 @@ Vimov.search = (() => {
     return box;
   }
 
+  // A hue from 0 to 359 for a site's name, the same every time.
+  function hue(name) {
+    let h = 0;
+    for (const char of name) h = (h * 31 + char.codePointAt(0)) % 360;
+    return h;
+  }
+
   // A tile with the first letter of the site's name (github for
-  // www.github.com), for a site without an icon.
+  // www.github.com), for a site without an icon. Its soft tint comes from
+  // the name, so a site's rows look alike and different sites stand apart.
   function letter(result) {
     let name = '';
     try {
       name = new URL(result.url).hostname.replace(/^www\./, '');
     } catch {}
-    const first = Array.from(name || result.title || '')[0] || '';
-    return el('span', 'icon letter', first.toUpperCase());
+    name ||= result.title || '';
+    const tile = el('span', 'icon letter', (Array.from(name)[0] || '').toUpperCase());
+    tile.style.setProperty('--hue', hue(name));
+    return tile;
   }
 
   // The site's icon, when Firefox had one to give (src/sources.js); a page

@@ -71,6 +71,7 @@ Vimov.ui = (() => {
       text-overflow: ellipsis;
       pointer-events: none;
     }
+    .hud.leaving { animation: vimov-fade 150ms ease-in forwards; }
     /* Text drawn from an attribute isn't page text, so the browser's own
        find doesn't match it. */
     .hud::after { content: attr(data-text); }
@@ -173,12 +174,16 @@ Vimov.ui = (() => {
     }
 
     .help {
+      display: flex;
+      flex-direction: column;
       width: min(880px, 100%);
-      overflow: auto;
-      padding: 22px 26px 10px;
+      overflow: hidden;
+      padding: 22px 26px 0;
       font: 13px/1.45 var(--vm-sans);
     }
-    .help header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .help header { flex: none; display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .help .body { min-height: 0; overflow: auto; padding-bottom: 10px; }
+    .help .body.more { mask-image: linear-gradient(to bottom, #000 calc(100% - 56px), transparent); }
     .help h1 { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
     .help .note { margin-left: auto; color: var(--vm-muted); }
     .help .filter {
@@ -264,15 +269,19 @@ Vimov.ui = (() => {
       border-radius: 4px;
       object-fit: contain;
     }
+    /* --hue comes from the site's name (search.js). */
     .search .icon.letter {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--vm-raised);
-      color: var(--vm-muted);
+      background: hsl(var(--hue, 0) 45% 90%);
+      color: hsl(var(--hue, 0) 40% 32%);
       font-size: 10px;
       font-weight: 700;
       line-height: 1;
+    }
+    @media (prefers-color-scheme: dark) {
+      .search .icon.letter { background: hsl(var(--hue, 0) 25% 27%); color: hsl(var(--hue, 0) 55% 80%); }
     }
     .search .icon.glyph { color: var(--vm-muted); }
     .search .icon svg {
@@ -366,11 +375,24 @@ Vimov.ui = (() => {
     return root;
   }
 
+  // The HUD fades out rather than vanishing, still showing what it said.
+  const FADE_MS = 150;
+  let fadeTimer = 0;
   function render() {
     getRoot();
     const text = message || status;
-    hud.dataset.text = text;
-    hud.hidden = !text;
+    if (text) {
+      clearTimeout(fadeTimer);
+      hud.classList.remove('leaving');
+      hud.dataset.text = text;
+      hud.hidden = false;
+    } else if (!hud.hidden && !hud.classList.contains('leaving')) {
+      hud.classList.add('leaving');
+      fadeTimer = setTimeout(() => {
+        hud.hidden = true;
+        hud.classList.remove('leaving');
+      }, FADE_MS);
+    }
   }
 
   return {

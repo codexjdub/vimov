@@ -13,13 +13,15 @@ Vimov.actions = (() => {
   const smooth = (event) => settings().smoothScroll && !event?.repeat;
   const step = (n) => settings().scrollStep * n;
 
-  // scrollDown and the like: a step per press (times the count), or a glide
-  // while the key is held.
+  // scrollDown and the like: a step per press (times the count), gliding on
+  // while the key is held (src/content/scroll.js).
   const line = (axis, dir) => (n, _, e) => {
-    if (e?.repeat && settings().smoothScroll) {
-      return scroll.glide(axis, dir, step(GLIDE_STEPS_PER_SECOND), e.code);
-    }
-    return scroll.by(axis, { px: dir * step(n) }, smooth(e));
+    if (!settings().smoothScroll) return scroll.by(axis, { px: dir * step(n) }, false);
+    return scroll.press(axis, dir, {
+      distance: e?.repeat ? 0 : step(n),
+      speed: step(GLIDE_STEPS_PER_SECOND),
+      code: e?.code,
+    });
   };
   const tabCommand = (cmd) => (count) => Vimov.bg(cmd, { count });
 

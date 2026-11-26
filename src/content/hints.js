@@ -44,14 +44,15 @@ Vimov.hints = (() => {
     return !el.closest(CLICKABLE) && !el.querySelector(CLICKABLE);
   }
 
-  // Clickable elements in view, in document order, with their visible boxes.
+  // Clickable elements in view, in document order, with their visible boxes
+  // and which way their text runs.
   function collect() {
     const targets = [];
     const visit = (root) => {
       for (const el of root.querySelectorAll('*')) {
         if (isClickable(el) || looksClickable(el)) {
           const rect = dom.visibleRect(el);
-          if (rect) targets.push({ el, rect });
+          if (rect) targets.push({ el, rect, rtl: getComputedStyle(el).direction === 'rtl' });
         }
         const shadow = dom.shadowRootOf(el);
         if (shadow) visit(shadow);
@@ -76,6 +77,42 @@ Vimov.hints = (() => {
   const overlaps = (a, b) =>
     a.left < b.left + b.width && a.left + a.width > b.left && a.top < b.top + b.height && a.top + a.height > b.top;
 
+  // Labels go just before their element, on its left (its right when the
+  // text runs right to left) and level with its first line, so they don't
+  // hide the start of a link's text. Where there isn't room, between two
+  // links close together or at the screen's edge, a label moves toward its
+  // element only as far as it must, covering as little of it as it can,
+  // and never another element.
+  const GAP = 2;
+  const LINE = 40; // a taller element has its label level with its top 40px
+  const asBox = (r) => ({ left: r.left, top: r.top, width: r.right - r.left, height: r.bottom - r.top });
+  // A link inside a clickable card doesn't count as covering the card.
+  const nested = (a, b) => !!(a?.contains?.(b) || b?.contains?.(a));
+
+  // Boxes { left, top, width, height } for labels of the given sizes, one
+  // for each target { el, rect, rtl }.
+  function place(targets, sizes) {
+    const rects = targets.map(({ rect }) => asBox(rect));
+    return targets.map(({ el, rect, rtl }, i) => {
+      const { width, height } = sizes[i];
+      const line = Math.min(rect.bottom - rect.top, LINE);
+      const top = Math.max(0, rect.top + (line - height) / 2);
+      const before = { left: rtl ? rect.right + GAP : rect.left - GAP - width, top, width, height };
+      // How near the label can come: the screen's edge, or past the
+      // elements it would cover.
+      let edge = rtl ? innerWidth : 0;
+      rects.forEach((other, j) => {
+        if (j === i || !overlaps(before, other) || nested(el, targets[j].el)) return;
+        edge = rtl ? Math.min(edge, other.left - 1) : Math.max(edge, other.left + other.width + 1);
+      });
+      // No further in than the element's own corner.
+      const left = rtl
+        ? Math.max(Math.min(before.left, edge - width), rect.right - width)
+        : Math.min(Math.max(before.left, edge), rect.left);
+      return { left, top, width, height };
+    });
+  }
+
   // New left edges for boxes { left, top, width, height }: each box moves
   // right, past any earlier one it would cover, so every label can be read
   // (a tiny vote arrow and the title next to it, or a link and a button
@@ -97,19 +134,66 @@ Vimov.hints = (() => {
     });
   }
 
-  // Measures every marker, then moves the ones that would cover another.
-  function spreadOut(markers) {
-    const boxes = markers.map(({ node }) => {
-      const { left, top, width, height } = node.getBoundingClientRect();
-      return { left, top, width, height };
-    });
+  // Measures every label, then puts each in its place, past any earlier
+  // label it would cover. Notes where each element is, for follow(). All
+  // the measuring comes before any moving, so the page is laid out once,
+  // not once per label.
+  function arrange(markers) {
+    const sizes = markers.map(({ node }) => node.getBoundingClientRect());
+    for (const marker of markers) {
+      // An element with no box of its own (display: contents) moves with its children.
+      const { el } = marker;
+      marker.anchor = el.getClientRects().length || !el.firstElementChild ? el : el.firstElementChild;
+      marker.origin = marker.anchor.getBoundingClientRect();
+      marker.dx = 0;
+      marker.dy = 0;
+    }
+    const boxes = place(markers, sizes);
     spread(boxes).forEach((left, i) => {
-      if (left !== boxes[i].left) markers[i].node.style.left = `${left}px`;
+      const marker = markers[i];
+      marker.box = { ...boxes[i], left };
+      marker.node.style.left = `${left}px`;
+      marker.node.style.top = `${boxes[i].top}px`;
     });
   }
 
-  function activate({ el, rect }, action) {
-    ui.flash(rect);
+  const setHidden = (node, hidden) => {
+    if (node.hidden !== hidden) node.hidden = hidden;
+  };
+
+  // The page can move while the labels are up: scrolled with the mouse or
+  // trackpad, or pushed down by an image loading above. Each frame, every
+  // label moves as far as its element has, and one whose element has left
+  // the screen is hidden until it's back. `shown(marker)` says whether a
+  // label on screen should show. Returns a function that stops it.
+  function follow(markers, shown) {
+    let frame = 0;
+    const check = () => {
+      // Every element measured first, then every label moved, so the page
+      // isn't laid out again between labels.
+      const rects = markers.map(({ anchor }) => (anchor.isConnected ? anchor.getBoundingClientRect() : null));
+      markers.forEach((marker, i) => {
+        const now = rects[i];
+        const dx = now ? now.left - marker.origin.left : 0;
+        const dy = now ? now.top - marker.origin.top : 0;
+        if (dx !== marker.dx || dy !== marker.dy) {
+          marker.dx = dx;
+          marker.dy = dy;
+          marker.node.style.translate = dx || dy ? `${dx}px ${dy}px` : '';
+        }
+        const { left, top, width, height } = marker.box;
+        marker.away =
+          !now || left + dx + width < 0 || left + dx > innerWidth || top + dy + height < 0 || top + dy > innerHeight;
+        setHidden(marker.node, marker.away || !shown(marker));
+      });
+      frame = requestAnimationFrame(check);
+    };
+    frame = requestAnimationFrame(check);
+    return () => cancelAnimationFrame(frame);
+  }
+
+  function activate({ el, rect, dx = 0, dy = 0 }, action) {
+    ui.flash({ left: rect.left + dx, top: rect.top + dy, right: rect.right + dx, bottom: rect.bottom + dy });
     Vimov.scroll.setTarget(el);
     const url = dom.linkUrl(el);
     switch (action) {
@@ -157,23 +241,23 @@ Vimov.hints = (() => {
     const layer = ui.el('div');
     const markers = targets.map((target, i) => {
       const node = ui.el('div', 'hint');
-      node.style.left = `${target.rect.left}px`;
-      node.style.top = `${target.rect.top}px`;
       node.textContent = labels[i];
       layer.append(node);
       return { ...target, label: labels[i], node };
     });
     ui.root().append(layer);
-    spreadOut(markers);
+    arrange(markers);
 
     let typed = '';
+    const stopFollowing = follow(markers, (marker) => marker.label.startsWith(typed));
 
-    // Shows the markers that start with what's been typed; returns them.
+    // Shows the markers that start with what's been typed; returns them,
+    // off-screen ones included.
     function filter() {
       const matching = [];
       for (const marker of markers) {
         const match = marker.label.startsWith(typed);
-        marker.node.hidden = !match;
+        setHidden(marker.node, !match || !!marker.away);
         if (!match) continue;
         matching.push(marker);
         marker.node.replaceChildren(ui.el('span', 'typed', typed), marker.label.slice(typed.length));
@@ -211,6 +295,7 @@ Vimov.hints = (() => {
         return true;
       },
       onExit() {
+        stopFollowing();
         layer.remove();
         removeEventListener('mousedown', exitOnMouse, true);
       },
@@ -219,5 +304,5 @@ Vimov.hints = (() => {
     Vimov.mode.enter(mode);
   }
 
-  return { start, makeLabels, spread };
+  return { start, makeLabels, place, spread };
 })();

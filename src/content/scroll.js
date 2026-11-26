@@ -99,43 +99,82 @@ Vimov.scroll = (() => {
     el.scrollTo({ [AXES[axis].edge]: end ? el[AXES[axis].size] : 0, behavior: behavior(smooth) });
   }
 
-  // Gliding: while a scroll key is held, scroll at a steady speed instead of
-  // jumping on each key repeat. It stops when that key comes up or the page
-  // loses focus. This keyup listener is added before main.js's, which hides
-  // keyups from listeners after it.
-  let glide = null; // { code, frame }
+  // Smooth line scrolling (j, k, h, l). A press eases one step along. Held,
+  // the scroll carries straight on into a glide that builds up to speed,
+  // with no pause while the system waits to repeat the key, and eases to a
+  // stop when the key comes up. The scroll follows a goal like a spring
+  // that doesn't overshoot (critically damped): a press moves the goal a
+  // step, and holding moves it along at the glide's speed.
+  const SPRING = 30; // how closely the scroll follows: most of a step in 150 ms
+  const HOLD_MS = 80; // a press held longer than this starts to glide…
+  const RAMP_MS = 250; // …and reaches full speed this much later
+  // { el, axis, dir, speed, code, held, heldFor, x, v, goal, moved, last, frame }
+  let motion = null;
 
-  function stopGlide() {
-    if (!glide) return;
-    cancelAnimationFrame(glide.frame);
-    glide = null;
+  function stopMotion() {
+    if (!motion) return;
+    cancelAnimationFrame(motion.frame);
+    motion = null;
   }
-  addEventListener('keyup', (e) => {
-    if (glide?.code === e.code) stopGlide();
-  }, true);
-  addEventListener('blur', stopGlide);
 
-  // Scrolls at `speed` pixels a second in `dir` until the key with this
-  // event.code is released. Repeats of the same key leave the glide going.
-  function startGlide(axis, dir, speed, code) {
-    if (glide?.code === code) return;
-    stopGlide();
+  // The key came up, or the page lost focus with it down: ease to a stop.
+  // This keyup listener is added before main.js's, which hides keyups from
+  // listeners after it.
+  const release = () => motion && (motion.held = false);
+  addEventListener('keyup', (e) => {
+    if (motion?.code === e.code) release();
+  }, true);
+  addEventListener('blur', release);
+
+  function tick(now) {
+    const m = motion;
+    const ms = m.last === null ? 1000 / 60 : Math.min(now - m.last, 50);
+    m.last = now;
+    const dt = ms / 1000;
+    if (m.held) {
+      m.heldFor += ms;
+      const ramp = Math.min(Math.max((m.heldFor - HOLD_MS) / RAMP_MS, 0), 1);
+      m.goal += m.dir * m.speed * ramp * dt;
+    }
+    // The spring, solved exactly for this frame, so a slow frame can't
+    // throw it off.
+    const off = m.x - m.goal;
+    const k = m.v + SPRING * off;
+    const decay = Math.exp(-SPRING * dt);
+    m.x = m.goal + (off + k * dt) * decay;
+    m.v = (m.v - SPRING * k * dt) * decay;
+    const settled = !m.held && Math.abs(m.goal - m.x) < 0.5 && Math.abs(m.v) < 10;
+    // Whole pixels at a time; the rest waits until it adds up.
+    const px = settled ? Math.round(m.goal - m.moved) : Math.trunc(m.x - m.moved);
+    if (px) {
+      const { pos, edge } = AXES[m.axis];
+      const before = m.el[pos];
+      m.el.scrollBy({ [edge]: px, behavior: 'instant' });
+      m.moved += px;
+      // At the end of the page, what's still owed is dropped, so a press
+      // the other way moves at once.
+      if (m.el[pos] === before) {
+        m.goal = m.x = m.moved;
+        m.v = 0;
+      }
+    }
+    if (settled) motion = null;
+    else m.frame = requestAnimationFrame(tick);
+  }
+
+  // A press of a line scroll key: `distance` pixels in `dir` along `axis`,
+  // gliding on at `speed` pixels a second while the key with event.code
+  // `code` stays down. A key repeat (distance 0) leaves the glide going, or
+  // starts one at once if there's none. A press the other way turns the
+  // scroll around smoothly.
+  function press(axis, dir, { distance = 0, speed = 0, code = null } = {}) {
+    if (!distance && motion?.held && motion.code === code) return;
     const el = target(axis, dir);
     if (!el) return;
-    let last = null;
-    let carry = 0; // distance owed, kept until it adds up to a whole pixel
-    const tick = (now) => {
-      const ms = last === null ? 16 : Math.min(now - last, 50);
-      last = now;
-      carry += (dir * speed * ms) / 1000;
-      const px = Math.trunc(carry);
-      if (px) {
-        el.scrollBy({ [AXES[axis].edge]: px, behavior: 'instant' });
-        carry -= px;
-      }
-      glide.frame = requestAnimationFrame(tick);
-    };
-    glide = { code, frame: requestAnimationFrame(tick) };
+    if (motion && (motion.el !== el || motion.axis !== axis)) stopMotion();
+    motion ||= { el, axis, x: 0, v: 0, goal: 0, moved: 0, last: null, frame: requestAnimationFrame(tick) };
+    Object.assign(motion, { dir, speed, code, held: !!code, heldFor: distance ? 0 : HOLD_MS });
+    motion.goal += dir * distance;
   }
 
   // Makes later scrolling start from el, as if the user had clicked it.
@@ -143,5 +182,5 @@ Vimov.scroll = (() => {
     lastTarget = el;
   }
 
-  return { by, to, glide: startGlide, stopGlide, setTarget };
+  return { by, to, press, setTarget };
 })();
