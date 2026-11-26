@@ -115,6 +115,12 @@ take them again with `sh dev/screenshots.sh` when the UI changes.
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.7.1)
+
+```
+- Vimov's original icon is back.
+```
+
 ## Version notes (0.7.0)
 
 ```
