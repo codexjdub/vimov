@@ -60,8 +60,15 @@ Vimov lets you browse without reaching for the mouse, using keys borrowed from V
 
 <b>Tabs</b>
 <ul>
-<li>K and J (or gt and gT) for the next and previous tab, g0 and g$ for the first and last. With Firefox's vertical tabs, J goes down to the next tab and K up</li>
+<li>K and J (or gt and gT) for the next and previous tab, g0 and g$ for the first and last. With Firefox's vertical tabs, or in Zen, J goes down to the next tab and K up</li>
+<li>The tab you land on shows where it is for a moment: Tab 4 of 9</li>
 <li>t, x, X and yt to open, close, reopen and duplicate tabs</li>
+</ul>
+
+<b>Type a command</b>
+<ul>
+<li>: opens a command line: any command by name, or Vim's :q, :tabnew, :e and :b</li>
+<li>It says what Enter will do as you type; Tab completes the name, Up brings back the last line</li>
 </ul>
 
 <b>Make it yours</b>
@@ -78,7 +85,7 @@ Or click the toolbar button to turn Vimov off for the site you're on, and again 
 
 Typing in a text field always goes to the page; Esc leaves the field. Press i to send every key to the page until Esc.
 
-Vimov collects no data and makes no network requests. Your tabs, bookmarks and history are only searched on your computer.
+Vimov collects no data and makes no network requests. Your tabs, bookmarks and history are only searched on your computer, and the weekly counts on the options page (links followed, distance scrolled, tabs switched) stay there too.
 
 Firefox doesn't let extensions run on about: pages, addons.mozilla.org, the PDF viewer or Reader View, so Vimov can't work there.
 ```
@@ -114,6 +121,17 @@ take them again with `sh dev/screenshots.sh` when the UI changes.
 
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
+
+## Version notes (0.9.0)
+
+```
+- Link hint labels pop up as they appear, the ones you rule out shrink away as you type, and the one you pick sinks in.
+- The vbar's highlight glides from result to result, and find matches glow as you reach them.
+- After J, K, g0 or g$, the tab you land on shows where it is ("Tab 4 of 9"), with a dot sliding over from the tab you left.
+- Press : for a command line: run any command by name, or Vim's :q, :tabnew, :e and :b. Tab completes the name, and Up brings back the last line. ZZ closes the tab.
+- The options page shows your week with Vimov: links followed, distance scrolled and tabs switched, counted on your computer only.
+- In Zen Browser, J goes down to the next tab and K up, following Zen's sidebar.
+```
 
 ## Version notes (0.8.1)
 
