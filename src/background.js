@@ -163,11 +163,11 @@ browser.storage.onChanged.addListener((changes, area) => {
 });
 browser.runtime.onStartup.addListener(showButtonInActiveTabs);
 
-// "Follow Firefox's setting" for tabs in the options: whether Firefox shows
-// tabs down the side. Only this page can ask (with the optional
-// browserSettings permission, on Firefox 142 and later), so it keeps the
-// answer in storage.local, where content scripts read it. Without the
-// permission it's false: tabs across the top.
+// "Follow Firefox's setting", the default tab layout: whether Firefox shows
+// tabs down the side. Only this page can ask (browserSettings, on Firefox
+// 142 and later), so it keeps the answer in storage.local, where content
+// scripts read it. On a Firefox that can't tell, it's false: tabs across
+// the top.
 async function readTabLayout() {
   let vertical = false;
   try {
@@ -177,20 +177,9 @@ async function readTabLayout() {
   if (vertical !== firefoxVerticalTabs) await browser.storage.local.set({ firefoxVerticalTabs: vertical });
 }
 
-// Listens for Firefox's layout changing, once the permission allows it.
-// Run whenever this page starts, so it's read fresh then too.
-let watchingTabLayout = false;
-function watchTabLayout() {
-  const setting = browser.browserSettings?.verticalTabs;
-  if (setting && !watchingTabLayout) {
-    setting.onChange.addListener(readTabLayout);
-    watchingTabLayout = true;
-  }
-  return readTabLayout();
-}
-watchTabLayout();
-browser.permissions.onAdded.addListener(watchTabLayout);
-browser.permissions.onRemoved.addListener(readTabLayout);
+// Read whenever this page starts, and again each time the layout changes.
+browser.browserSettings?.verticalTabs?.onChange.addListener(readTabLayout);
+readTabLayout();
 browser.runtime.onInstalled.addListener(({ reason, temporary } = {}) => {
   // A first install opens the welcome page; an update, or loading Vimov
   // from about:debugging while working on it, doesn't.

@@ -179,6 +179,12 @@ test('your own J and K mappings win over the tab layout', async () => {
   assert.deepStrictEqual(ran, ['previousTab:1']);
 });
 
+test('by default J and K follow Firefox: down the side, J goes to the next tab', async () => {
+  const { press, ran } = await setup({}, { firefoxVerticalTabs: true });
+  press('J', 'KeyJ', { shiftKey: true });
+  assert.deepStrictEqual(ran, ['nextTab:1']);
+});
+
 test('following Firefox, J and K switch when Firefox\'s layout does', async () => {
   const { press, ran, change } = await setup({ tabLayout: 'firefox' }, { firefoxVerticalTabs: false });
   press('J', 'KeyJ', { shiftKey: true });

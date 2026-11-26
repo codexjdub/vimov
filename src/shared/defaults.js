@@ -79,9 +79,9 @@ Vimov.DEFAULT_SETTINGS = {
   hintChars: 'sadfjklewcmpgh',
   scrollStep: 60,
   smoothScroll: true,
-  // Which way J and K go: 'top' (tabs across the top), 'side' (down the
-  // side) or 'firefox' (whichever Firefox shows; see src/background.js).
-  tabLayout: 'top',
+  // Which way J and K go: 'firefox' (whichever Firefox shows; see
+  // src/background.js), 'top' (tabs across the top) or 'side' (down the side).
+  tabLayout: 'firefox',
 };
 
 // Whether tabs run down the side, from the settings and, for 'firefox',

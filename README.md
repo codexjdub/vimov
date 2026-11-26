@@ -123,14 +123,14 @@ off there (it adds the site to excluded sites, and the button shows "off"),
 click again to turn it back on. If a pattern of your own covers the site, the
 button opens the options page instead of changing it.
 
-With vertical tabs, choose Tabs → "Down the side" in the options so `J` goes
-down to the next tab and `K` up to the previous one (the help then says "down /
-up"), or "Follow Firefox's setting" to switch whenever Firefox does. Following
-Firefox works on Firefox 142 and later and asks for the optional
-`browserSettings` permission, which Firefox words as "Read and modify browser
-settings"; Vimov only reads `browserSettings.verticalTabs`, and gives the
-permission back when you pick another layout. Your own `map` lines for `J` and
-`K` win either way.
+`J` and `K` follow Firefox's tab layout: with vertical tabs, `J` goes down to
+the next tab and `K` up to the previous one (the help then says "down / up"),
+and they switch back when Firefox does. Firefox 142 and later tell extensions
+the layout; on 140 and 141 Vimov treats tabs as across the top. Reading it
+takes the `browserSettings` permission, which Firefox words as "Read and modify
+browser settings"; Vimov only reads `browserSettings.verticalTabs`. Under Tabs
+in the options you can set "Across the top" or "Down the side" yourself, and
+your own `map` lines for `J` and `K` win either way.
 
 ## Development
 

@@ -11,7 +11,7 @@ Permissions:
 
 Site icons beside vbar results are the ones Firefox already provides as data: URLs (tabs' favIconUrl, and topSites with includeFavicon). They're held in memory in the background page, by host, and never stored or fetched; private tabs' icons are left out.
 - search: web searches from the vbar use the user's own search engines through search.search().
-- browserSettings (optional): requested only when the user chooses "Follow Firefox's setting for vertical tabs" under Tabs in the options. Vimov only reads browserSettings.verticalTabs (get and onChange in src/background.js, get in src/options/options.js) to decide whether J or K goes to the next tab, and never sets it. The background page keeps that one boolean in storage.local for content scripts. Choosing another layout removes the permission.
+- browserSettings: to follow Firefox's vertical tabs, the default under Tabs in the options. Vimov only reads browserSettings.verticalTabs (get and onChange in src/background.js, get in src/options/options.js) to decide whether J or K goes to the next tab, and never sets any browser setting. The background page keeps that one boolean in storage.local for content scripts.
 
 Search results are matched in the background page (src/sources.js) and drawn in a closed shadow root on the page; nothing is stored or sent anywhere.
 

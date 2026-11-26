@@ -12,7 +12,7 @@ function setup({
   exclusions = '',
   clipboard = '',
   tabs = [{ id: 1, index: 0, windowId: 1, active: true, url: 'https://example.com/' }],
-  browserSettings, // present once the optional permission is granted
+  browserSettings, // its verticalTabs only on Firefox 142 and later
 } = {}) {
   const opened = [];
   const stored = { exclusions };
@@ -34,7 +34,6 @@ function setup({
       onActivated: event(),
       onUpdated: event(),
     },
-    permissions: { onAdded: event(), onRemoved: event() },
     browserSettings,
     storage: {
       local: {
@@ -238,22 +237,17 @@ test('Firefox\'s tab layout is kept for content scripts, and followed as it chan
   assert.strictEqual(local.firefoxVerticalTabs, false);
 });
 
-test('without the permission, or on a Firefox that can\'t tell, tabs count as across the top', async () => {
-  for (const browserSettings of [undefined, {}]) {
-    const { local } = setup({ browserSettings });
-    await tick();
-    assert.notStrictEqual(local.firefoxVerticalTabs, true);
-  }
-  // Granted later: read at once, and listened to from then on.
-  const { browser, local } = setup();
+test('on a Firefox that can\'t tell (140 and 141), tabs count as across the top', async () => {
+  const { local } = setup({ browserSettings: {} });
   await tick();
-  const setting = { value: true, onChange: event(), get: async () => ({ value: setting.value }) };
-  browser.browserSettings = { verticalTabs: setting };
-  await browser.permissions.onAdded.fire({ permissions: ['browserSettings'] });
-  assert.strictEqual(local.firefoxVerticalTabs, true);
-  assert.strictEqual(setting.onChange.listeners.length, 1);
-  // Taken away in about:addons: back to across the top.
-  delete browser.browserSettings;
-  await browser.permissions.onRemoved.fire({ permissions: ['browserSettings'] });
+  assert.notStrictEqual(local.firefoxVerticalTabs, true);
+});
+
+test('the layout read at start is replaced when Firefox switches back', async () => {
+  const setting = { value: false, onChange: event(), get: async () => ({ value: setting.value }) };
+  const { local } = setup({ browserSettings: { verticalTabs: setting } });
+  local.firefoxVerticalTabs = true; // kept from before Firefox switched
+  await tick();
   assert.strictEqual(local.firefoxVerticalTabs, false);
+  assert.strictEqual(setting.onChange.listeners.length, 1);
 });

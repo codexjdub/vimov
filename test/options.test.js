@@ -8,16 +8,15 @@ const { SHARED, load, run, event } = require('./helpers');
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-async function setup(initial, { vertical = false } = {}) {
+// `vertical`: what Firefox shows. `tells`: whether this Firefox says
+// (142 and later do).
+async function setup(initial, { vertical = false, tells = true } = {}) {
   const elements = {};
   // The tab layout's radio buttons.
   const radios = ['top', 'side', 'firefox'].map((value) => ({
     value, checked: false, listeners: {},
     addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); },
   }));
-  // The optional browserSettings permission: whether it's granted, and what
-  // the user answers when asked.
-  const permission = { granted: false, answer: true, asked: 0, removed: 0 };
   const element = (id) => (elements[id] ||= {
     id, value: '', checked: false, disabled: false, textContent: '', listeners: {},
     type: id === 'smoothScroll' ? 'checkbox' : 'text',
@@ -37,21 +36,7 @@ async function setup(initial, { vertical = false } = {}) {
     addEventListener() {},
     browser: {
       runtime: { getManifest: () => ({ version: '0.6.0' }) },
-      permissions: {
-        contains: async () => permission.granted,
-        request: async () => {
-          permission.asked++;
-          return (permission.granted = permission.answer);
-        },
-        remove: async () => {
-          permission.removed++;
-          permission.granted = false;
-        },
-      },
-      // Only there once the permission is granted, as in Firefox.
-      get browserSettings() {
-        return permission.granted ? { verticalTabs: { get: async () => ({ value: vertical }) } } : undefined;
-      },
+      browserSettings: tells ? { verticalTabs: { get: async () => ({ value: vertical }) } } : {},
       storage: {
         sync: {
           get: async (defaults) => ({ ...defaults, ...stored }),
@@ -88,7 +73,7 @@ async function setup(initial, { vertical = false } = {}) {
     for (let i = 0; i < 5; i++) await tick();
   };
   const layout = () => radios.find((r) => r.checked)?.value;
-  return { element, stored, writes, type, elsewhere, save, choose, layout, permission };
+  return { element, stored, writes, type, elsewhere, save, choose, layout };
 }
 
 test('saving with unsaved edits keeps a change the toolbar button made', async () => {
@@ -114,32 +99,29 @@ test('an edit made here wins over a change made elsewhere to the same setting', 
   assert.strictEqual(stored.exclusions, 'b.example');
 });
 
-test('following Firefox asks for the permission; refused, the choice goes back', async () => {
-  const { element, choose, layout, permission } = await setup({ tabLayout: 'side' });
-  assert.strictEqual(layout(), 'side');
-  permission.answer = false;
-  await choose('firefox');
-  assert.strictEqual(permission.asked, 1);
-  assert.strictEqual(layout(), 'side');
+test('by default the tabs follow Firefox, and the note says what Firefox shows', async () => {
+  const { element, layout } = await setup({}, { vertical: true });
+  await tick();
+  assert.strictEqual(layout(), 'firefox');
+  assert.match(element('tabLayout-note').textContent, /down the side, so J goes to the next tab/);
+  // The default isn't an edit.
   assert.strictEqual(element('save').disabled, true);
 });
 
-test('following Firefox, the note says what Firefox shows; another layout gives the permission back', async () => {
-  const { element, stored, save, choose, permission } = await setup({}, { vertical: true });
-  await choose('firefox');
-  assert.match(element('tabLayout-note').textContent, /down the side, so J goes to the next tab/);
-  await save();
-  assert.strictEqual(stored.tabLayout, 'firefox');
-  assert.strictEqual(permission.granted, true);
+test('choosing another layout saves it, and following Firefox again says what it shows', async () => {
+  const { element, stored, save, choose } = await setup({});
   await choose('side');
   assert.strictEqual(element('tabLayout-note').textContent, '');
   await save();
   assert.strictEqual(stored.tabLayout, 'side');
-  assert.deepStrictEqual([permission.removed, permission.granted], [1, false]);
+  await choose('firefox');
+  assert.match(element('tabLayout-note').textContent, /across the top, so K goes to the next tab/);
+  await save();
+  assert.strictEqual(stored.tabLayout, 'firefox');
 });
 
-test('following Firefox without the permission (synced from elsewhere) says how to allow it', async () => {
-  const { element } = await setup({ tabLayout: 'firefox' });
+test('on a Firefox that can\'t tell, the note says the tabs count as across the top', async () => {
+  const { element } = await setup({}, { tells: false });
   await tick();
-  assert.match(element('tabLayout-note').textContent, /Choose this option again to allow it/);
+  assert.match(element('tabLayout-note').textContent, /Firefox 142 and later do/);
 });

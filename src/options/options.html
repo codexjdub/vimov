@@ -91,17 +91,16 @@ https://docs.google.com/*"></textarea>
       <p>Which way <code>J</code> and <code>K</code> go through your tabs.</p>
       <div class="choices" role="radiogroup" aria-label="Tab layout">
         <label class="field">
+          <input type="radio" name="tabLayout" value="firefox">
+          <span>Follow Firefox’s setting for vertical tabs</span>
+        </label>
+        <label class="field">
           <input type="radio" name="tabLayout" value="top">
           <span>Across the top: <code>K</code> goes to the next tab, <code>J</code> to the previous one</span>
         </label>
         <label class="field">
           <input type="radio" name="tabLayout" value="side">
           <span>Down the side: <code>J</code> goes down to the next tab, <code>K</code> up to the previous one</span>
-        </label>
-        <label class="field">
-          <input type="radio" name="tabLayout" value="firefox">
-          <span>Follow Firefox’s setting for vertical tabs
-            <span class="help-text">Firefox asks you to let Vimov “Read and modify browser settings”. Vimov only reads whether your tabs are vertical.</span></span>
         </label>
       </div>
       <p class="help-text" id="tabLayout-note"></p>
