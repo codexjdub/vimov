@@ -115,6 +115,14 @@ take them again with `sh dev/screenshots.sh` when the UI changes.
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.8.0)
+
+```
+- J and K follow Firefox's vertical tabs from the start: with tabs down the side, J goes down to the next tab and K up to the previous one, and they switch back when Firefox does (Firefox 142 and later).
+- For this, Vimov now asks to "Read and modify browser settings". It only reads whether your tabs are vertical, and never changes a setting.
+- Under Tabs in the options you can still set the direction yourself. If you already chose one, it stays.
+```
+
 ## Version notes (0.7.1)
 
 ```
