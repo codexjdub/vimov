@@ -138,6 +138,12 @@ Vimov.find = (() => {
     }
   }
 
+  // A ring spreads out from the match, so the eye lands on it.
+  function glow(range) {
+    const r = range.getBoundingClientRect();
+    if (r.width || r.height) ui.flash({ left: r.left - 2, top: r.top - 1, right: r.right + 2, bottom: r.bottom + 1 });
+  }
+
   // Selects the match. A match inside a link also focuses the link, so Enter
   // follows it.
   function select(range) {
@@ -196,6 +202,7 @@ Vimov.find = (() => {
       current = matches[(matches.indexOf(current) + dir + n) % n];
       paint(matches, current);
       reveal(current);
+      glow(current);
       counter.dataset.text = countText(matches, current);
     }
 
@@ -234,8 +241,9 @@ Vimov.find = (() => {
         }
         lastQuery = query;
         if (outcome === 'accept') {
-          if (current) select(current);
-          else ui.message(`Not found: ${query}`);
+          if (!current) return ui.message(`Not found: ${query}`);
+          select(current);
+          glow(current);
         }
       },
     };
@@ -313,6 +321,7 @@ Vimov.find = (() => {
     paint(matches, current);
     select(current);
     reveal(current);
+    glow(current);
     ui.message(countText(matches, current));
   }
 

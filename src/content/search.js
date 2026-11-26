@@ -131,8 +131,9 @@ Vimov.search = (() => {
   }
 
   // Opens the bar. `in` limits it to one source; `newTab` makes Enter open
-  // results in a new tab (Shift+Enter does the other).
-  function open({ in: source = 'all', newTab = false } = {}) {
+  // results in a new tab (Shift+Enter does the other); `query` is put in the
+  // box to start with.
+  function open({ in: source = 'all', newTab = false, query = '' } = {}) {
     const focused = document.activeElement;
     const backdrop = el('div', 'backdrop top');
     const panel = el('div', 'search');
@@ -145,6 +146,9 @@ Vimov.search = (() => {
     input.setAttribute('aria-label', input.placeholder);
     const list = el('ol', 'results');
     list.setAttribute('role', 'listbox');
+    // One highlight for the selected row, which glides from row to row.
+    const marker = el('li', 'marker');
+    marker.setAttribute('aria-hidden', 'true');
     const empty = el('div', 'empty');
     empty.setAttribute('role', 'status');
     empty.hidden = true;
@@ -162,6 +166,7 @@ Vimov.search = (() => {
     ui.root().append(backdrop);
 
     let results = [];
+    let items = []; // the rows, one for each result
     let selected = 0;
     let confirming = null; // a big folder waiting for a second Enter
     let request = 0;
@@ -175,31 +180,45 @@ Vimov.search = (() => {
       else footer.replaceChildren(...keys);
     }
 
-    function select(i) {
+    // Moves the highlight to row i: gliding there, or at once for a new
+    // list of results.
+    function place(i, glide) {
+      const item = items[i];
+      if (!item) return;
+      if (!glide) marker.style.transition = 'none';
+      marker.style.translate = `0 ${item.offsetTop}px`;
+      marker.style.height = `${item.offsetHeight}px`;
+      if (!glide) {
+        marker.getBoundingClientRect(); // the jump is drawn before gliding comes back
+        marker.style.transition = '';
+      }
+    }
+
+    function select(i, glide = true) {
       selected = i;
       confirming = null;
-      [...list.children].forEach((item, j) => {
+      items.forEach((item, j) => {
         item.classList.toggle('selected', j === i);
         item.setAttribute('aria-selected', String(j === i));
       });
-      list.children[i]?.scrollIntoView({ block: 'nearest' });
+      place(i, glide);
+      items[i]?.scrollIntoView({ block: 'nearest' });
       showFooter();
     }
 
     function render() {
       const words = typedWords();
-      list.replaceChildren(
-        ...results.map((result, i) => {
-          const item = row(result, words);
-          item.addEventListener('mousemove', () => selected !== i && select(i));
-          item.addEventListener('click', (e) => choose(i, e.shiftKey));
-          return item;
-        }),
-      );
+      items = results.map((result, i) => {
+        const item = row(result, words);
+        item.addEventListener('mousemove', () => selected !== i && select(i));
+        item.addEventListener('click', (e) => choose(i, e.shiftKey));
+        return item;
+      });
+      list.replaceChildren(marker, ...items);
       list.hidden = !results.length;
       empty.hidden = !!results.length;
       empty.textContent = results.length ? '' : emptyText(input.value, source);
-      select(Math.min(selected, Math.max(results.length - 1, 0)));
+      select(Math.min(selected, Math.max(results.length - 1, 0)), false);
     }
 
     // Asks the background page for results. Answers to older queries that
@@ -293,6 +312,7 @@ Vimov.search = (() => {
 
     showFooter();
     Vimov.mode.enter(mode);
+    input.value = query;
     input.focus();
     update();
   }

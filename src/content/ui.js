@@ -46,7 +46,8 @@ Vimov.ui = (() => {
     @keyframes vimov-in { from { opacity: 0; transform: translateY(4px); } }
     @keyframes vimov-appear { from { opacity: 0; } }
     @media (prefers-reduced-motion: reduce) {
-      .hud, .next, .find, .backdrop, .help, .search { animation: none !important; }
+      .hud, .next, .find, .backdrop, .help, .search, .hint { animation: none !important; }
+      .hint, .search .marker, .tabs .here { transition: none !important; }
     }
 
     /* The pieces in the corners: the mode line, the keys that can follow a
@@ -107,9 +108,25 @@ Vimov.ui = (() => {
       white-space: nowrap;
       box-shadow: 0 0 0 1px rgba(120, 53, 15, 0.45), 0 2px 6px rgba(0, 0, 0, 0.22);
       pointer-events: none;
+      /* They pop up from the top of the screen down (--delay, hints.js);
+         those that stop matching shrink away, and come back on Backspace. */
+      animation: vimov-pop 110ms var(--vm-ease) var(--delay, 0ms) backwards;
+      transition: opacity 120ms ease-in, scale 120ms ease-in;
     }
+    .hint.gone { opacity: 0; scale: 0.6; }
+    /* The chosen one sinks in, then lifts away. */
+    .hint.pressed { animation: vimov-press 280ms ease-out forwards; }
     .hint .typed { opacity: 0.4; }
+    @keyframes vimov-pop { from { opacity: 0; scale: 0.6; } }
+    @keyframes vimov-press {
+      30% { scale: 0.84; opacity: 1; }
+      to { scale: 1.15; opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hint.pressed { animation: vimov-fade 200ms ease-out forwards !important; }
+    }
 
+    /* What a command acted on: a ring that spreads out from it and fades. */
     .flash {
       position: fixed;
       border-radius: 4px;
@@ -117,9 +134,15 @@ Vimov.ui = (() => {
       outline-offset: 1px;
       background: rgba(245, 158, 11, 0.16);
       pointer-events: none;
-      animation: vimov-fade 320ms ease-out forwards;
+      animation: vimov-ripple 460ms var(--vm-ease) forwards;
+    }
+    @keyframes vimov-ripple {
+      to { outline-offset: 10px; outline-color: rgba(245, 158, 11, 0); background-color: rgba(245, 158, 11, 0); }
     }
     @keyframes vimov-fade { to { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .flash { animation: vimov-fade 320ms ease-out forwards; }
+    }
 
     .find {
       left: 12px;
@@ -140,6 +163,20 @@ Vimov.ui = (() => {
     }
     .find .count { color: var(--vm-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
     .find .count::after { content: attr(data-text); }
+    /* The command line (command.js) is the find bar with a colon. Enter on
+       a line that can't run gives it a little shake. */
+    .find.command::before { content: ":"; }
+    .find.command .count { max-width: 44ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .find.command .count.error { color: var(--vm-accent); }
+    .find.shake { animation: vimov-shake 260ms var(--vm-ease); }
+    @keyframes vimov-shake {
+      20% { translate: -5px 0; }
+      45% { translate: 4px 0; }
+      70% { translate: -2px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .find.shake { animation: none; }
+    }
 
     .backdrop {
       position: fixed;
@@ -241,7 +278,7 @@ Vimov.ui = (() => {
       caret-color: var(--vm-accent);
     }
     .search input::placeholder { color: var(--vm-muted); }
-    .search .results { margin: 0; padding: 6px; overflow: auto; list-style: none; }
+    .search .results { position: relative; margin: 0; padding: 6px; overflow: auto; list-style: none; }
     .search .result {
       position: relative;
       display: flex;
@@ -251,8 +288,19 @@ Vimov.ui = (() => {
       border-radius: 8px;
       cursor: pointer;
     }
-    .search .result.selected { background: var(--vm-selected); }
-    .search .result.selected::before {
+    /* The selected row's highlight, behind the rows, gliding between them
+       (search.js places it). */
+    .search .marker {
+      position: absolute;
+      top: 0;
+      left: 6px;
+      right: 6px;
+      border-radius: 8px;
+      background: var(--vm-selected);
+      pointer-events: none;
+      transition: translate 150ms var(--vm-ease), height 150ms var(--vm-ease);
+    }
+    .search .marker::before {
       content: "";
       position: absolute;
       left: 0;
@@ -301,6 +349,48 @@ Vimov.ui = (() => {
     /* What a result is, quietly, at the end of its row. */
     .search .tag { flex: none; color: var(--vm-muted); font-size: 12px; }
     .search .empty { padding: 14px 18px; color: var(--vm-muted); }
+    /* Where the tab is among the window's tabs, for a moment after J, K, g0,
+       g$, << or >>: "Tab 4 of 9", and a dot that slides to it. */
+    .tabs {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      translate: -50% 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 12px;
+      border: 1px solid var(--vm-border);
+      border-radius: 999px;
+      background: var(--vm-surface);
+      color: var(--vm-fg);
+      font: 12.5px/1.5 var(--vm-sans);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      box-shadow: var(--vm-shadow-sm);
+      pointer-events: none;
+      animation: vimov-in 140ms var(--vm-ease);
+    }
+    .tabs.leaving { animation: vimov-fade 200ms ease-in forwards; }
+    .tabs .where::after { content: attr(data-text); }
+    .tabs .dots { position: relative; display: flex; gap: 5px; }
+    .tabs .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--vm-muted); opacity: 0.35; }
+    .tabs .here {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--vm-mark);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+      translate: calc(var(--at, 0) * 11px) 0; /* a dot and a gap a tab */
+      transition: translate 280ms var(--vm-ease);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tabs { animation: none; }
+    }
+
     .search .footer {
       display: flex;
       flex-wrap: wrap;
@@ -375,6 +465,10 @@ Vimov.ui = (() => {
     return root;
   }
 
+  let tabsBox = null; // where the tab is, after a tab command
+  let tabsTimer = 0;
+  const MAX_DOTS = 15; // more tabs than this get only the words
+
   // The HUD fades out rather than vanishing, still showing what it said.
   const FADE_MS = 150;
   let fadeTimer = 0;
@@ -440,6 +534,40 @@ Vimov.ui = (() => {
       render();
     },
 
+    // Shows for a moment where this tab is, the `index`th of `count`,
+    // with a dot sliding there from where the last tab was (`from`).
+    tabPosition({ from = -1, index, count }) {
+      if (!(index >= 0 && count > 0)) return;
+      clearTimeout(tabsTimer);
+      tabsBox?.remove();
+      const box = el('div', 'tabs');
+      const where = el('span', 'where');
+      where.dataset.text = `Tab ${index + 1} of ${count}`;
+      box.append(where);
+      let here = null;
+      if (count > 1 && count <= MAX_DOTS) {
+        const dots = el('span', 'dots');
+        for (let i = 0; i < count; i++) dots.append(el('i'));
+        here = el('b', 'here');
+        here.style.setProperty('--at', from >= 0 && from < count ? from : index);
+        dots.append(here);
+        box.append(dots);
+      }
+      getRoot().append(box);
+      tabsBox = box;
+      if (here) {
+        here.getBoundingClientRect(); // drawn where it was, then it slides
+        here.style.setProperty('--at', index);
+      }
+      tabsTimer = setTimeout(() => {
+        box.classList.add('leaving');
+        tabsTimer = setTimeout(() => {
+          box.remove();
+          if (tabsBox === box) tabsBox = null;
+        }, 200);
+      }, 1200);
+    },
+
     // Briefly outlines a rectangle, to show what a command acted on.
     flash(rect) {
       if (!rect) return;
@@ -451,7 +579,7 @@ Vimov.ui = (() => {
         height: `${rect.bottom - rect.top}px`,
       });
       getRoot().append(box);
-      setTimeout(() => box.remove(), 340);
+      setTimeout(() => box.remove(), 480);
     },
   };
 })();

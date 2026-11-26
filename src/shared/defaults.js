@@ -57,6 +57,7 @@ map g0 firstTab
 map g$ lastTab
 map t newTab
 map x closeTab
+map ZZ closeTab
 map X restoreTab
 map yt duplicateTab
 map << moveTabLeft
@@ -65,6 +66,7 @@ map <a-p> togglePinTab
 
 # Other
 map ? showHelp
+map : commandLine
 `;
 
 // With tabs down the side, J goes down to the next tab and K up to the
@@ -82,6 +84,19 @@ Vimov.DEFAULT_SETTINGS = {
   // Which way J and K go: 'firefox' (whichever Firefox shows; see
   // src/background.js), 'top' (tabs across the top) or 'side' (down the side).
   tabLayout: 'firefox',
+};
+
+// Whether this is Zen Browser, which always shows tabs down the side, in a
+// sidebar of its own: Firefox's vertical tabs setting stays off there. Zen
+// calls itself Firefox but adds `zen` to runtime.getBrowserInfo() (since
+// February 2026). For the background and options pages; content scripts
+// can't ask.
+Vimov.isZen = async () => {
+  try {
+    return !!(await browser.runtime.getBrowserInfo?.())?.zen;
+  } catch {
+    return false;
+  }
 };
 
 // Whether tabs run down the side, from the settings and, for 'firefox',

@@ -120,6 +120,7 @@ Vimov.actions = (() => {
     togglePinTab: tabCommand('togglePinTab'),
 
     showHelp: () => Vimov.help.open(),
+    commandLine: () => Vimov.commandLine.open(),
     openOptions: () => Vimov.bg('openOptions'),
   };
 })();

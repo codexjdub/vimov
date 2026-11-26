@@ -57,3 +57,31 @@ Vimov.copyText = async (text) => {
   }
   if (copied) Vimov.ui.message(`Copied ${text}`);
 };
+
+// Counts for "Your week with Vimov" on the options page: links followed and
+// pixels scrolled. They're sent to the background page, which keeps them in
+// storage.local, a few seconds' worth at a time, and when the page is left.
+Vimov.tally = (() => {
+  const counts = { links: 0, px: 0 };
+  let timer = 0;
+  let listening = false;
+  function flush() {
+    clearTimeout(timer);
+    timer = 0;
+    if (!counts.links && !counts.px) return;
+    const sent = { links: counts.links, px: Math.round(counts.px) };
+    counts.links = 0;
+    counts.px = 0;
+    browser.runtime.sendMessage({ cmd: 'tally', ...sent }).catch(() => {});
+  }
+  return (kind, n = 1) => {
+    if (!n) return;
+    counts[kind] += n;
+    if (!listening) {
+      listening = true;
+      addEventListener('pagehide', flush);
+      document.addEventListener('visibilitychange', () => document.hidden && flush());
+    }
+    timer ||= setTimeout(flush, 3000);
+  };
+})();

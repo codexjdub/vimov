@@ -22,6 +22,7 @@
       "src/shared/commands.js",
       "src/shared/defaults.js",
       "src/shared/keys.js",
+      "src/shared/stats.js",
       "src/sources.js",
       "src/background.js"
     ]
@@ -56,6 +57,7 @@
         "src/content/find.js",
         "src/content/help.js",
         "src/content/search.js",
+        "src/content/command.js",
         "src/content/pages.js",
         "src/content/actions.js",
         "src/content/main.js"

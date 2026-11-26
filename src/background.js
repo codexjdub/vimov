@@ -8,8 +8,11 @@
 const handlers = {
   nextTab: ({ count }, tab) => selectRelative(tab, count),
   previousTab: ({ count }, tab) => selectRelative(tab, -count),
-  firstTab: async (_, tab) => activate((await visibleTabs(tab))[0]),
-  lastTab: async (_, tab) => activate((await visibleTabs(tab)).at(-1)),
+  firstTab: async (_, tab) => switchTo(tab, await visibleTabs(tab), 0),
+  lastTab: async (_, tab) => {
+    const tabs = await visibleTabs(tab);
+    return switchTo(tab, tabs, tabs.length - 1);
+  },
   newTab: () => browser.tabs.create({}),
   closeTab: async ({ count }, tab) => {
     const tabs = await visibleTabs(tab);
@@ -18,7 +21,12 @@ const handlers = {
   },
   restoreTab: () => browser.sessions.restore(),
   duplicateTab: (_, tab) => browser.tabs.duplicate(tab.id),
-  moveTab: ({ count }, tab) => browser.tabs.move(tab.id, { index: Math.max(0, tab.index + count) }),
+  moveTab: async ({ count }, tab) => {
+    const from = (await visibleTabs(tab)).findIndex((t) => t.id === tab.id);
+    await browser.tabs.move(tab.id, { index: Math.max(0, tab.index + count) });
+    const tabs = await visibleTabs(tab);
+    showPosition(tab.id, tabs, from, tabs.findIndex((t) => t.id === tab.id));
+  },
   togglePinTab: (_, tab) => browser.tabs.update(tab.id, { pinned: !tab.pinned }),
   reload: ({ hard }, tab) => browser.tabs.reload(tab.id, { bypassCache: !!hard }),
   openUrl: ({ url, active }, tab) =>
@@ -37,11 +45,12 @@ const handlers = {
     return browser.tabs.toggleReaderMode(tab.id);
   },
   // The vbar opens in the top frame, even when a key was pressed in an iframe.
-  openSearch: ({ in: source, newTab }, tab) =>
-    browser.tabs.sendMessage(tab.id, { cmd: 'openSearch', in: source, newTab }, { frameId: 0 }),
+  openSearch: ({ in: source, newTab, query }, tab) =>
+    browser.tabs.sendMessage(tab.id, { cmd: 'openSearch', in: source, newTab, query }, { frameId: 0 }),
   search: ({ query, in: source }, tab) => Sources.search(query, { source, tab }),
   openResult: ({ result, newTab }, tab) => Sources.open(result, { newTab, tab }),
   removeResult: ({ result }) => Sources.remove(result),
+  tally: (counts) => tally(counts),
 };
 
 // Tabs in the window that aren't hidden (Firefox can hide tabs).
@@ -51,7 +60,40 @@ const activate = (tab) => browser.tabs.update(tab.id, { active: true });
 async function selectRelative(tab, delta) {
   const tabs = await visibleTabs(tab);
   const i = tabs.findIndex((t) => t.id === tab.id);
-  return activate(tabs[(((i + delta) % tabs.length) + tabs.length) % tabs.length]);
+  return switchTo(tab, tabs, (((i + delta) % tabs.length) + tabs.length) % tabs.length);
+}
+
+// The tab at `index` in the window shows, for a moment, where it is among
+// the `tabs` ("Tab 4 of 9"), coming from `from`. A tab Vimov can't run in
+// (about: pages, the add-ons store) shows nothing.
+function showPosition(tabId, tabs, from, index) {
+  if (index < 0) return;
+  browser.tabs
+    .sendMessage(tabId, { cmd: 'tabPosition', from, index, count: tabs.length }, { frameId: 0 })
+    .catch(() => {});
+}
+
+// Goes from `tab` to tabs[index], for the tab commands.
+async function switchTo(tab, tabs, index) {
+  const next = tabs[index];
+  if (!next) return;
+  await activate(next);
+  if (next.id !== tab.id) tally({ tabs: 1 });
+  showPosition(next.id, tabs, tabs.findIndex((t) => t.id === tab.id), index);
+}
+
+// Adds counts to "Your week with Vimov" (src/shared/stats.js), one batch
+// after another, so two arriving together can't both start from the same
+// old totals.
+let tallying = Promise.resolve();
+function tally(counts) {
+  tallying = tallying
+    .then(async () => {
+      const { stats } = await browser.storage.local.get({ stats: null });
+      await browser.storage.local.set({ stats: Vimov.addTally(stats, counts, new Date()) });
+    })
+    .catch((err) => console.error('Vimov:', err));
+  return tallying;
 }
 
 browser.runtime.onMessage.addListener((message, sender) => {
@@ -166,12 +208,13 @@ browser.runtime.onStartup.addListener(showButtonInActiveTabs);
 // "Follow Firefox's setting", the default tab layout: whether Firefox shows
 // tabs down the side. Only this page can ask (browserSettings, on Firefox
 // 142 and later), so it keeps the answer in storage.local, where content
-// scripts read it. On a Firefox that can't tell, it's false: tabs across
-// the top.
+// scripts read it. Zen always has them down the side, whatever Firefox's
+// setting says. On a Firefox that can't tell, it's false: tabs across the
+// top.
 async function readTabLayout() {
-  let vertical = false;
+  let vertical = await Vimov.isZen();
   try {
-    vertical = (await browser.browserSettings?.verticalTabs?.get({}))?.value === true;
+    vertical ||= (await browser.browserSettings?.verticalTabs?.get({}))?.value === true;
   } catch {}
   const { firefoxVerticalTabs } = await browser.storage.local.get({ firefoxVerticalTabs: false });
   if (vertical !== firefoxVerticalTabs) await browser.storage.local.set({ firefoxVerticalTabs: vertical });

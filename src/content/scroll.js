@@ -85,17 +85,27 @@ Vimov.scroll = (() => {
 
   const behavior = (smooth) => (smooth ? 'smooth' : 'instant');
 
+  // How far el can scroll in `dir`, for the distance scrolled that the
+  // options page shows (Vimov.tally).
+  function room(el, axis, dir) {
+    const pos = Math.abs(el[AXES[axis].pos]);
+    return Math.max(dir > 0 ? extent(el, axis) - pos : pos, 0);
+  }
+
   // Scrolls by `px` pixels or by `pages` viewport heights (widths for x).
   function by(axis, { px, pages }, smooth) {
     const el = target(axis, Math.sign(px ?? pages));
     if (!el) return;
     const view = el === docScroller() ? (axis === 'y' ? innerHeight : innerWidth) : el[AXES[axis].view];
-    el.scrollBy({ [AXES[axis].edge]: px ?? pages * view, behavior: behavior(smooth) });
+    const distance = px ?? pages * view;
+    Vimov.tally('px', Math.min(Math.abs(distance), room(el, axis, Math.sign(distance))));
+    el.scrollBy({ [AXES[axis].edge]: distance, behavior: behavior(smooth) });
   }
 
   function to(axis, end, smooth) {
     const el = target(axis, end ? 1 : -1);
     if (!el) return;
+    Vimov.tally('px', room(el, axis, end ? 1 : -1));
     el.scrollTo({ [AXES[axis].edge]: end ? el[AXES[axis].size] : 0, behavior: behavior(smooth) });
   }
 
@@ -151,6 +161,7 @@ Vimov.scroll = (() => {
       const before = m.el[pos];
       m.el.scrollBy({ [edge]: px, behavior: 'instant' });
       m.moved += px;
+      Vimov.tally('px', Math.abs(m.el[pos] - before));
       // At the end of the page, what's still owed is dropped, so a press
       // the other way moves at once.
       if (m.el[pos] === before) {

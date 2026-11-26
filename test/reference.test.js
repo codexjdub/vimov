@@ -26,7 +26,7 @@ test('opposite commands share a row, keys of each on either side of the slash', 
 
 test('the list is about a third shorter than one row per command', () => {
   const rows = reference().filter((s) => !s.category.startsWith('In ')).flatMap((s) => s.rows);
-  assert.strictEqual(rows.length, 33);
+  assert.strictEqual(rows.length, 34);
 });
 
 test('a pair is split when one side is unmapped or remapped', () => {
@@ -37,9 +37,9 @@ test('a pair is split when one side is unmapped or remapped', () => {
   assert.strictEqual(row(alone, 'Scroll down / up'), undefined);
 });
 
-test('keys inside the vbar, find and hints come last', () => {
+test('keys inside the vbar, find, the command line and hints come last', () => {
   const categories = reference().map((s) => s.category);
-  assert.deepStrictEqual(categories.slice(-3), ['In the vbar', 'In find', 'In link hints']);
+  assert.deepStrictEqual(categories.slice(-4), ['In the vbar', 'In find', 'In the command line', 'In link hints']);
   assert.deepStrictEqual(row(reference(), 'Next / previous match while typing').groups, [['<c-j>'], ['<c-k>']]);
 });
 

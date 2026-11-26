@@ -173,6 +173,68 @@ input:focus-visible, button:focus-visible, summary:focus-visible {
   display: block;
 }
 
+/* Your week with Vimov: three numbers, and a picture of the distance. */
+.week-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.week-head .help-text {
+  margin: 0;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--code);
+}
+
+.tile .value {
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile .label {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.tile .like {
+  margin-top: 4px;
+  color: var(--accent);
+  font-size: 12.5px;
+}
+
+.tile .like:empty {
+  display: none;
+}
+
+.week > .help-text {
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  .tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
 .help-text {
   color: var(--muted);
   font-size: 13px;

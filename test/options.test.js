@@ -10,7 +10,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 // `vertical`: what Firefox shows. `tells`: whether this Firefox says
 // (142 and later do).
-async function setup(initial, { vertical = false, tells = true } = {}) {
+async function setup(initial, { vertical = false, tells = true, zen = false } = {}) {
   const elements = {};
   // The tab layout's radio buttons.
   const radios = ['top', 'side', 'firefox'].map((value) => ({
@@ -24,6 +24,7 @@ async function setup(initial, { vertical = false, tells = true } = {}) {
     replaceChildren() {}, append() {},
   });
   const stored = { ...initial };
+  const local = {};
   const writes = [];
   const onChanged = event();
   const ctx = load(SHARED, {
@@ -35,9 +36,13 @@ async function setup(initial, { vertical = false, tells = true } = {}) {
     },
     addEventListener() {},
     browser: {
-      runtime: { getManifest: () => ({ version: '0.6.0' }) },
+      runtime: {
+        getManifest: () => ({ version: '0.6.0' }),
+        getBrowserInfo: async () => (zen ? { name: 'Firefox', zen: { version: '1.19b' } } : { name: 'Firefox' }),
+      },
       browserSettings: tells ? { verticalTabs: { get: async () => ({ value: vertical }) } } : {},
       storage: {
+        local: { get: async (defaults) => ({ ...defaults, ...local }) },
         sync: {
           get: async (defaults) => ({ ...defaults, ...stored }),
           set: async (values) => {
@@ -50,7 +55,7 @@ async function setup(initial, { vertical = false, tells = true } = {}) {
       },
     },
   });
-  run(ctx, ['src/options/options.js']);
+  run(ctx, ['src/shared/stats.js', 'src/options/options.js']);
   await tick();
   const type = (id, value) => {
     element(id).value = value;
@@ -118,6 +123,15 @@ test('choosing another layout saves it, and following Firefox again says what it
   assert.match(element('tabLayout-note').textContent, /across the top, so K goes to the next tab/);
   await save();
   assert.strictEqual(stored.tabLayout, 'firefox');
+});
+
+test('in Zen the note says the tabs are down the side; across the top, it mentions sidebar extensions', async () => {
+  const zen = await setup({}, { zen: true });
+  await tick();
+  assert.strictEqual(zen.element('tabLayout-note').textContent, 'Zen shows your tabs down the side, so J goes to the next tab.');
+  const firefox = await setup({});
+  await tick();
+  assert.match(firefox.element('tabLayout-note').textContent, /Sidebery or Tree Style Tab\? Choose Down the side\.$/);
 });
 
 test('on a Firefox that can\'t tell, the note says the tabs count as across the top', async () => {

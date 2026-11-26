@@ -100,6 +100,7 @@ globalThis.Vimov = globalThis.Vimov || {};
     togglePinTab: { category: 'Tabs', description: 'Pin or unpin the tab' },
 
     showHelp: { category: 'Other', description: 'Show this help' },
+    commandLine: { category: 'Other', description: 'Run a command by name, or a Vim word like :q or :tabnew' },
     openOptions: { category: 'Other', description: 'Open the options page' },
   };
 

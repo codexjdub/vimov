@@ -2,7 +2,7 @@ No build step: the package contains the source exactly as in the repository (htt
 
 Permissions:
 - Content scripts on all URLs: Vimov handles keyboard commands on every page.
-- storage: the user's key mappings and settings.
+- storage: the user's key mappings and settings. storage.local also holds three counts for the options page's "Your week with Vimov" card: links followed with link hints, pixels scrolled by Vimov's scroll commands and tabs switched with its tab commands, this week and last week only (src/shared/stats.js, written by src/background.js). They're never sent anywhere; the extension makes no network requests.
 - sessions: "reopen closed tab" (X).
 - clipboardRead: p and P open the URL on the clipboard, or search for its text with the user's default search engine, only when the user presses them. The clipboard is read in the background page (src/background.js, openClipboard) and nothing is kept.
 - clipboardWrite: copying the page URL (yy) and link URLs (yf) from the background page when the page itself can't write to the clipboard.
@@ -11,7 +11,7 @@ Permissions:
 
 Site icons beside vbar results are the ones Firefox already provides as data: URLs (tabs' favIconUrl, and topSites with includeFavicon). They're held in memory in the background page, by host, and never stored or fetched; private tabs' icons are left out.
 - search: web searches from the vbar use the user's own search engines through search.search().
-- browserSettings: to follow Firefox's vertical tabs, the default under Tabs in the options. Vimov only reads browserSettings.verticalTabs (get and onChange in src/background.js, get in src/options/options.js) to decide whether J or K goes to the next tab, and never sets any browser setting. The background page keeps that one boolean in storage.local for content scripts.
+- browserSettings: to follow Firefox's vertical tabs, the default under Tabs in the options. Vimov only reads browserSettings.verticalTabs (get and onChange in src/background.js, get in src/options/options.js) to decide whether J or K goes to the next tab, and never sets any browser setting. The background page keeps that one boolean in storage.local for content scripts. In Zen Browser, a Firefox fork that always shows tabs down the side and locks Firefox's vertical tabs setting off, the same boolean is set from the `zen` field Zen adds to runtime.getBrowserInfo() (no permission; read in src/shared/defaults.js, Vimov.isZen).
 
 Search results are matched in the background page (src/sources.js) and drawn in a closed shadow root on the page; nothing is stored or sent anywhere.
 

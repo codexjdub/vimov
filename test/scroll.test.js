@@ -29,10 +29,12 @@ function setup({ page = box(), elements = [] } = {}) {
   let frames = new Map();
   let nextFrame = 1;
   let now = 0;
+  const tallied = { px: 0 };
   const ctx = load([], {
     Vimov: {
       dom: { deepActiveElement: () => null, deepElementFromPoint: () => null, flatParent: () => null },
       ui: { owns: (node) => node?.vimov === true },
+      tally: (kind, n) => (tallied[kind] += n),
     },
     document: { scrollingElement: page, documentElement: page, body: box({ height: 0 }), querySelectorAll: () => elements },
     getComputedStyle: (el) => el.computed,
@@ -57,7 +59,7 @@ function setup({ page = box(), elements = [] } = {}) {
     }
   };
   const fire = (type, event = {}) => (listeners[type] || []).forEach((fn) => fn(event));
-  return { ctx, page, frame, fire, pending: () => frames.size };
+  return { ctx, page, frame, fire, tallied, pending: () => frames.size };
 }
 
 const J = { distance: 60, speed: 900, code: 'KeyJ' };
@@ -232,4 +234,16 @@ test('a page locked with overflow: hidden isn\'t scrolled', () => {
   second.ctx.Vimov.scroll.press('y', 1, J);
   second.frame(10);
   assert.deepStrictEqual([page.scrollTop, second.pending()], [0, 0]);
+});
+
+test('the distance scroll commands move is counted for the options page', () => {
+  const { ctx, page, frame, fire, tallied } = setup();
+  ctx.Vimov.scroll.by('y', { px: 60 }, false);
+  // To the bottom counts what was left to go: 20000 - 800 - 60.
+  ctx.Vimov.scroll.to('y', true, true);
+  ctx.Vimov.scroll.press('y', 1, J);
+  fire('keyup', { code: 'KeyJ' });
+  frame(40);
+  assert.strictEqual(page.scrollTop, 120);
+  assert.strictEqual(tallied.px, 60 + 19140 + 60);
 });

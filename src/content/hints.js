@@ -134,6 +134,9 @@ Vimov.hints = (() => {
     });
   }
 
+  // Labels pop up from the top of the screen down, over this long.
+  const CASCADE_MS = 50;
+
   // Measures every label, then puts each in its place, past any earlier
   // label it would cover. Notes where each element is, for follow(). All
   // the measuring comes before any moving, so the page is laid out once,
@@ -151,9 +154,14 @@ Vimov.hints = (() => {
     const boxes = place(markers, sizes);
     spread(boxes).forEach((left, i) => {
       const marker = markers[i];
+      const { top } = boxes[i];
       marker.box = { ...boxes[i], left };
-      marker.node.style.left = `${left}px`;
-      marker.node.style.top = `${boxes[i].top}px`;
+      const { style } = marker.node;
+      style.left = `${left}px`;
+      style.top = `${top}px`;
+      style.setProperty('--delay', `${Math.round(Math.min(Math.max(top / innerHeight, 0), 1) * CASCADE_MS)}ms`);
+      // Each grows from the side next to its element.
+      style.transformOrigin = marker.rtl ? '0 50%' : '100% 50%';
     });
   }
 
@@ -164,9 +172,8 @@ Vimov.hints = (() => {
   // The page can move while the labels are up: scrolled with the mouse or
   // trackpad, or pushed down by an image loading above. Each frame, every
   // label moves as far as its element has, and one whose element has left
-  // the screen is hidden until it's back. `shown(marker)` says whether a
-  // label on screen should show. Returns a function that stops it.
-  function follow(markers, shown) {
+  // the screen is hidden until it's back. Returns a function that stops it.
+  function follow(markers) {
     let frame = 0;
     const check = () => {
       // Every element measured first, then every label moved, so the page
@@ -184,7 +191,7 @@ Vimov.hints = (() => {
         const { left, top, width, height } = marker.box;
         marker.away =
           !now || left + dx + width < 0 || left + dx > innerWidth || top + dy + height < 0 || top + dy > innerHeight;
-        setHidden(marker.node, marker.away || !shown(marker));
+        setHidden(marker.node, marker.away);
       });
       frame = requestAnimationFrame(check);
     };
@@ -192,9 +199,20 @@ Vimov.hints = (() => {
     return () => cancelAnimationFrame(frame);
   }
 
+  // The chosen label sinks in and fades where it was, so the eye sees which
+  // one was taken, while the rest go.
+  function press({ node, label }) {
+    const ghost = node.cloneNode(false);
+    ghost.classList.add('pressed');
+    ghost.textContent = label;
+    ui.root().append(ghost);
+    setTimeout(() => ghost.remove(), 300);
+  }
+
   function activate({ el, rect, dx = 0, dy = 0 }, action) {
     ui.flash({ left: rect.left + dx, top: rect.top + dy, right: rect.right + dx, bottom: rect.bottom + dy });
     Vimov.scroll.setTarget(el);
+    Vimov.tally('links');
     const url = dom.linkUrl(el);
     switch (action) {
       case 'newTab':
@@ -249,15 +267,15 @@ Vimov.hints = (() => {
     arrange(markers);
 
     let typed = '';
-    const stopFollowing = follow(markers, (marker) => marker.label.startsWith(typed));
+    const stopFollowing = follow(markers);
 
-    // Shows the markers that start with what's been typed; returns them,
-    // off-screen ones included.
+    // Shows the markers that start with what's been typed; the others shrink
+    // away. Returns the matching ones, off-screen ones included.
     function filter() {
       const matching = [];
       for (const marker of markers) {
         const match = marker.label.startsWith(typed);
-        setHidden(marker.node, !match || !!marker.away);
+        marker.node.classList.toggle('gone', !match);
         if (!match) continue;
         matching.push(marker);
         marker.node.replaceChildren(ui.el('span', 'typed', typed), marker.label.slice(typed.length));
@@ -288,6 +306,7 @@ Vimov.hints = (() => {
             typed = typed.slice(0, -1);
             filter();
           } else if (matching.length === 1 && matching[0].label === typed) {
+            press(matching[0]);
             Vimov.mode.exit(mode);
             activate(matching[0], action);
           }

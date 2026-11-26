@@ -204,8 +204,11 @@
   browser.storage.onChanged.addListener((changes, area) => {
     if (area === 'sync' || (area === 'local' && changes.firefoxVerticalTabs)) loadSettings();
   });
-  // The vbar, asked for from an iframe in this tab.
+  // From the background page: the vbar, asked for from an iframe in this
+  // tab, and where this tab is after a tab command brought it to the front.
   browser.runtime.onMessage.addListener((message) => {
-    if (message?.cmd === 'openSearch' && window.top === window) Vimov.search.open(message);
+    if (window.top !== window) return;
+    if (message?.cmd === 'openSearch') Vimov.search.open(message);
+    else if (message?.cmd === 'tabPosition') ui.tabPosition(message);
   });
 })();

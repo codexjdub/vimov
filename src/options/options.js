@@ -121,13 +121,17 @@ async function showLayout() {
   let note = '';
   if (layout === 'firefox') {
     const setting = browser.browserSettings?.verticalTabs;
-    if (!setting) {
+    if (await Vimov.isZen()) {
+      firefoxVertical = true;
+      note = 'Zen shows your tabs down the side, so J goes to the next tab.';
+    } else if (!setting) {
       note = 'This version of Firefox doesn’t tell extensions how it shows tabs (Firefox 142 and later do), so Vimov treats them as across the top.';
     } else {
       firefoxVertical = (await setting.get({}).catch(() => ({})))?.value === true;
       note = firefoxVertical
         ? 'Firefox shows your tabs down the side, so J goes to the next tab. Vimov follows when you change it.'
-        : 'Firefox shows your tabs across the top, so K goes to the next tab. Vimov follows when you change it.';
+        : 'Firefox shows your tabs across the top, so K goes to the next tab. Vimov follows when you change it. ' +
+          'Using a sidebar for your tabs, such as Sidebery or Tree Style Tab? Choose Down the side.';
     }
   }
   if (id !== layoutRequest) return;
@@ -168,6 +172,62 @@ function buildReference(layout = {}) {
     : Vimov.DEFAULT_KEYMAP;
 }
 
+// Your week with Vimov (src/shared/stats.js). The numbers count up to what
+// they are, and on as the counts come in while the page is open.
+const WEEK_KINDS = ['links', 'px', 'tabs'];
+const weekText = {
+  links: (n) => Math.round(n).toLocaleString('en'),
+  px: (n) => Vimov.formatDistance(Vimov.pxToMeters(n)),
+  tabs: (n) => Math.round(n).toLocaleString('en'),
+};
+let weekShown = null; // the numbers in the tiles
+let weekFrame = 0;
+
+const plural = (n, one, many) => `${n.toLocaleString('en')} ${n === 1 ? one : many}`;
+
+function drawWeek(values) {
+  for (const kind of WEEK_KINDS) $(`week-${kind}`).textContent = weekText[kind](values[kind]);
+}
+
+async function showWeek() {
+  let stats = null;
+  try {
+    ({ stats } = await browser.storage.local.get({ stats: null }));
+  } catch {}
+  const week = Vimov.statsFor(stats, new Date());
+  const [y, m, d] = week.week.split('-').map(Number);
+  const monday = new Date(y, m - 1, d).toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' });
+  $('week-since').textContent = `Since ${monday}`;
+  $('week-like').textContent = Vimov.distanceLike(Vimov.pxToMeters(week.px));
+  const empty = WEEK_KINDS.every((kind) => !week[kind]);
+  const notes = [
+    empty
+      ? 'Nothing yet this week: follow a link with f, scroll with j, and switch tabs with J and K.'
+      : 'Counted on this computer only; nothing is sent anywhere.',
+  ];
+  if (week.last) {
+    const { links, px, tabs } = week.last;
+    const distance = Vimov.formatDistance(Vimov.pxToMeters(px));
+    notes.push(`Last week: ${plural(links, 'link', 'links')}, ${distance} scrolled, ${plural(tabs, 'tab switch', 'tab switches')}.`);
+  }
+  $('week-note').textContent = notes.join(' ');
+
+  const from = weekShown || { links: 0, px: 0, tabs: 0 };
+  weekShown = week;
+  const still =
+    typeof requestAnimationFrame !== 'function' || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (still) return drawWeek(week);
+  cancelAnimationFrame(weekFrame);
+  const start = performance.now();
+  const step = (now) => {
+    const t = Math.min((now - start) / 700, 1);
+    const eased = 1 - (1 - t) ** 3;
+    drawWeek(Object.fromEntries(WEEK_KINDS.map((kind) => [kind, from[kind] + (week[kind] - from[kind]) * eased])));
+    if (t < 1) weekFrame = requestAnimationFrame(step);
+  };
+  weekFrame = requestAnimationFrame(step);
+}
+
 for (const field of Object.values(fields)) field.addEventListener('input', refresh);
 layoutField.addEventListener('input', showLayout);
 $('save').addEventListener('click', save);
@@ -197,11 +257,13 @@ function load() {
 
 buildReference();
 load();
+showWeek();
 // Settings changed elsewhere, by the toolbar button or another options tab:
 // shown in the fields not edited here. An edited field keeps the edit, and
 // saving writes it.
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.firefoxVerticalTabs) showLayout();
+  if (area === 'local' && changes.stats) showWeek();
   if (area !== 'sync') return;
   const current = read();
   const names = Object.keys(changes).filter((name) => Object.hasOwn(fields, name));

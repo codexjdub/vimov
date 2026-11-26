@@ -31,19 +31,23 @@ keeps development files out of it. The listing text lives in
 | `/`, `n` `N` | Find in page; next and previous match (Ctrl+J and Ctrl+K while typing) |
 | `o` `O`, `b` `B`, `T` | Search tabs, bookmarks, history and the web in the vbar; bookmarks only; open tabs only |
 | `K` `J` (or `gt` `gT`), `g0` `g$` | Next and previous tab; first and last tab |
-| `t`, `x`, `X`, `yt` | New, close, reopen and duplicate a tab |
+| `t`, `x` (or `ZZ`), `X`, `yt` | New, close, reopen and duplicate a tab |
 | `H` `L`, `r`, `gu` `gU`, `yy` | Back and forward, reload, up the URL, copy the URL |
 | `}` `{` | Follow the page's "next" and "previous" links |
 | `p` `P` | Open the URL on the clipboard (or search for its text), here or in a new tab |
 | `gr` | Open the page in Reader View |
 | `i`, `gi` | Pass keys to the page until Esc; focus a text field |
+| `:` | The command line: any command by name, or a Vim word such as `:q` or `:tabnew` |
 
 A count repeats or scales a command: `5j`, `3K`. Holding `j`, `k`, `h` or `l`
 glides smoothly rather than jumping (unless smooth scrolling is off). Esc
-leaves a text field, closes hints or find, and clears find highlights.
+leaves a text field, closes hints or find, and clears find highlights. After
+`J`, `K`, `g0`, `g$`, `<<` or `>>`, the tab you land on says where it is for a
+moment ("Tab 4 of 9"), with a dot sliding over from the tab you left.
 
 `?` lists every key with your own mappings, opposite commands on one row
-(`j / k  Scroll down / up`), then the keys inside the vbar, find and hints.
+(`j / k  Scroll down / up`), then the keys inside the vbar, find, the command
+line and hints.
 Type `/` there to filter it (`/tab`, `/ctrl`); Enter keeps the filter, Esc
 drops it. Link hints and find show their own keys in the corner while open.
 Pause half a second after the first key of a sequence, such as `g`, and the
@@ -97,6 +101,27 @@ tell sites what you have open.
 - Type `v` and a space in Firefox's address bar for the same search on pages
   Vimov can't run on, such as the new-tab page.
 
+## The command line
+
+`:` opens a line at the bottom of the page. Type any command by its name, with
+options as in a mapping (`:scrollToBottom`, `:reload hard=true`), or one of the
+Vim words that mean something in a browser:
+
+| Type | Does |
+| --- | --- |
+| `:q`, `:wq`, `:x`, `:close` | Close the tab |
+| `:tabnew`, `:tabnew example.com` | Open a new tab, or a page in one |
+| `:e`, `:e!`, `:e example.com` | Reload, reload bypassing the cache, or open a page here |
+| `:o`, `:o example.com` | Open the vbar, or a page here |
+| `:b text`, `:bookmarks text`, `:history text` | Search open tabs, bookmarks or history for the text |
+| `:tabn` `:tabp`, `:tabfirst` `:tablast` | Next and previous tab; first and last tab |
+| `:tabm +2`, `:tabm -1` | Move the tab right or left |
+| `:u`, `:pin`, `:back` `:forward`, `:h`, `:set` | Reopen a closed tab; pin or unpin; back and forward; help; the options |
+
+As you type, the line says what Enter will do. Tab completes a command's name
+(again for the next one), Up and Down bring back earlier lines, and a line that
+can't run says why and stays open to be fixed.
+
 ## Configure
 
 The options page (`about:addons` → Vimov → Preferences) takes mappings on top
@@ -118,6 +143,11 @@ mail.google.com
 *.youtube.com f j k l
 ```
 
+The options page also shows your week with Vimov: links followed with hints,
+the distance scrolled with Vimov's keys and tabs switched with them, since
+Monday, with last week's beside them. They're counted on this computer only
+(in `storage.local`) and never sent anywhere.
+
 The toolbar button does this for the site you're on: click it to turn Vimov
 off there (it adds the site to excluded sites, and the button shows "off"),
 click again to turn it back on. If a pattern of your own covers the site, the
@@ -126,7 +156,11 @@ button opens the options page instead of changing it.
 `J` and `K` follow Firefox's tab layout: with vertical tabs, `J` goes down to
 the next tab and `K` up to the previous one (the help then says "down / up"),
 and they switch back when Firefox does. Firefox 142 and later tell extensions
-the layout; on 140 and 141 Vimov treats tabs as across the top. Reading it
+the layout; on 140 and 141 Vimov treats tabs as across the top. Zen Browser
+keeps its tabs down the side whatever Firefox's setting says, so Vimov goes by
+Zen's own mark in `runtime.getBrowserInfo()` there (Zen from February 2026 on).
+A sidebar extension for tabs, such as Sidebery or Tree Style Tab, can't be
+seen; choose "Down the side" for it. Reading it
 takes the `browserSettings` permission, which Firefox words as "Read and modify
 browser settings"; Vimov only reads `browserSettings.verticalTabs`. Under Tabs
 in the options you can set "Across the top" or "Down the side" yourself, and

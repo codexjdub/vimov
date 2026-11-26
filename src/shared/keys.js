@@ -283,5 +283,5 @@ Vimov.keys = (() => {
     return [...kept, host].join('\n');
   }
 
-  return { fromEvent, parse, buildKeymap, parseExclusions, matchExclusion, siteExclusion, toggleSite, escapeRegExp };
+  return { fromEvent, parse, parseOptions, buildKeymap, parseExclusions, matchExclusion, siteExclusion, toggleSite, escapeRegExp };
 })();

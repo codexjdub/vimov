@@ -13,8 +13,10 @@ function setup({
   clipboard = '',
   tabs = [{ id: 1, index: 0, windowId: 1, active: true, url: 'https://example.com/' }],
   browserSettings, // its verticalTabs only on Firefox 142 and later
+  browserInfo = { name: 'Firefox' }, // Zen adds `zen`
 } = {}) {
   const opened = [];
+  const sent = []; // messages to content scripts: [tabId, message, options]
   const stored = { exclusions };
   const local = {};
   const button = {}; // tab id → { enabled, badge, title }
@@ -24,6 +26,7 @@ function setup({
       onMessage: event(), onInstalled: event(), onStartup: event(),
       openOptionsPage: async () => opened.push(['options']),
       getURL: (path) => `moz-extension://vimov/${path}`,
+      getBrowserInfo: async () => browserInfo,
     },
     omnibox: { setDefaultSuggestion() {}, onInputChanged: event(), onInputEntered: event() },
     tabs: {
@@ -31,6 +34,20 @@ function setup({
       get: async (id) => tabs.find((t) => t.id === id),
       toggleReaderMode: async (id) => opened.push(['reader', id]),
       create: async ({ url }) => opened.push(['tab', url]),
+      update: async (id, { active }) => {
+        if (active) for (const t of tabs) t.active = t.id === id;
+        return tabs.find((t) => t.id === id);
+      },
+      move: async (id, { index }) => {
+        const tab = tabs.find((t) => t.id === id);
+        tabs.splice(tabs.indexOf(tab), 1);
+        tabs.splice(Math.min(index, tabs.length), 0, tab);
+        tabs.forEach((t, i) => (t.index = i));
+      },
+      sendMessage: async (tabId, message, options) => {
+        sent.push([tabId, message, options]);
+        if (tabId === 13) throw new Error('Could not establish connection'); // an about: page
+      },
       onActivated: event(),
       onUpdated: event(),
     },
@@ -65,9 +82,12 @@ function setup({
     forText: async (text) => ({ type: 'url', url: text }),
     open: async (result, options) => opened.push([result, options]),
   };
-  run(ctx, ['src/background.js']);
-  return { browser, opened, stored, local, button };
+  run(ctx, ['src/shared/stats.js', 'src/background.js']);
+  return { browser, opened, sent, stored, local, button };
 }
+
+// This week's Monday, as stats.js writes it.
+const ctxWeek = () => load(['src/shared/stats.js']).Vimov.weekOf(new Date());
 
 const tabResult = (url, title = url) => ({ type: 'tab', id: 7, windowId: 1, url, title });
 
@@ -250,4 +270,58 @@ test('the layout read at start is replaced when Firefox switches back', async ()
   await tick();
   assert.strictEqual(local.firefoxVerticalTabs, false);
   assert.strictEqual(setting.onChange.listeners.length, 1);
+});
+
+test('in Zen, tabs count as down the side, though Firefox\'s setting is off', async () => {
+  const setting = { value: false, onChange: event(), get: async () => ({ value: setting.value }) };
+  const zen = setup({ browserSettings: { verticalTabs: setting }, browserInfo: { name: 'Firefox', zen: { version: '1.19b' } } });
+  await tick();
+  assert.strictEqual(zen.local.firefoxVerticalTabs, true);
+  // An older Zen, from before it said so, looks like Firefox.
+  const older = setup({ browserSettings: { verticalTabs: setting }, browserInfo: { name: 'Firefox' } });
+  await tick();
+  assert.notStrictEqual(older.local.firefoxVerticalTabs, true);
+});
+
+const row = (n) => Array.from({ length: n }, (_, i) => ({ id: 10 + i, index: i, windowId: 1, active: i === 0 }));
+
+test('a tab command has the tab now in front show where it is, coming from where it was', async () => {
+  const tabs = row(4);
+  const { browser, sent, local } = setup({ tabs });
+  await browser.runtime.onMessage.fire({ cmd: 'nextTab', count: 2 }, { tab: tabs[0] });
+  await browser.runtime.onMessage.fire({ cmd: 'lastTab' }, { tab: tabs[2] });
+  await browser.runtime.onMessage.fire({ cmd: 'nextTab' }, { tab: tabs[3] }); // round to the first
+  assert.deepStrictEqual(plain(sent), [
+    [12, { cmd: 'tabPosition', from: 0, index: 2, count: 4 }, { frameId: 0 }],
+    [13, { cmd: 'tabPosition', from: 2, index: 3, count: 4 }, { frameId: 0 }],
+    [10, { cmd: 'tabPosition', from: 3, index: 0, count: 4 }, { frameId: 0 }],
+  ]);
+  assert.strictEqual(tabs.find((t) => t.active).id, 10);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.strictEqual(local.stats.tabs, 3);
+});
+
+test('moving a tab shows where it went, and going nowhere isn\'t a switch', async () => {
+  const tabs = row(3);
+  const { browser, sent, local } = setup({ tabs });
+  await browser.runtime.onMessage.fire({ cmd: 'moveTab', count: 2 }, { tab: tabs[0] });
+  assert.deepStrictEqual(plain(sent.pop()), [10, { cmd: 'tabPosition', from: 0, index: 2, count: 3 }, { frameId: 0 }]);
+  await browser.runtime.onMessage.fire({ cmd: 'firstTab' }, { tab: tabs.find((t) => t.id === 11) });
+  await browser.runtime.onMessage.fire({ cmd: 'firstTab' }, { tab: tabs.find((t) => t.id === 11) });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.strictEqual(local.stats, undefined); // nothing counted
+});
+
+test('counts sent at once are all kept, one batch after another', async () => {
+  const { browser, local } = setup();
+  const sender = { tab: { id: 1 } };
+  await Promise.all([
+    browser.runtime.onMessage.fire({ cmd: 'tally', links: 2, px: 300 }, sender),
+    browser.runtime.onMessage.fire({ cmd: 'tally', links: 1 }, sender),
+    browser.runtime.onMessage.fire({ cmd: 'tally', px: 60 }, sender),
+  ]);
+  assert.deepStrictEqual(
+    [local.stats.week, local.stats.links, local.stats.px, local.stats.tabs],
+    [ctxWeek(), 3, 360, 0],
+  );
 });

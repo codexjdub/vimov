@@ -16,6 +16,19 @@
       </div>
     </header>
 
+    <section class="week" aria-labelledby="week-title">
+      <div class="week-head">
+        <h2 id="week-title">Your week with Vimov</h2>
+        <span class="help-text" id="week-since"></span>
+      </div>
+      <div class="tiles">
+        <div class="tile"><span class="value" id="week-links">0</span><span class="label">links followed</span></div>
+        <div class="tile"><span class="value" id="week-px">0 cm</span><span class="label">scrolled</span><span class="like" id="week-like"></span></div>
+        <div class="tile"><span class="value" id="week-tabs">0</span><span class="label">tabs switched</span></div>
+      </div>
+      <p class="help-text" id="week-note"></p>
+    </section>
+
     <section>
       <h2>Key mappings</h2>
       <p>Your lines are applied on top of the default mappings, one statement per line.</p>
@@ -116,6 +129,7 @@ https://docs.google.com/*"></textarea>
   <script src="../shared/commands.js"></script>
   <script src="../shared/defaults.js"></script>
   <script src="../shared/keys.js"></script>
+  <script src="../shared/stats.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

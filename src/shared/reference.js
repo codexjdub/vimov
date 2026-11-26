@@ -46,6 +46,14 @@ Vimov.keyReference = (() => {
       ],
     },
     {
+      category: 'In the command line',
+      rows: [
+        [[['<enter>']], 'Run the command'],
+        [[['<tab>']], 'Complete the command’s name, again for the next one'],
+        [[['<up>'], ['<down>']], 'An earlier / later line'],
+      ],
+    },
+    {
       category: 'In link hints',
       rows: [
         [[['<backspace>']], 'Take back the last letter typed'],
