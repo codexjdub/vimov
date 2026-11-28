@@ -123,6 +123,14 @@ take them again with `sh dev/screenshots.sh` when the UI changes.
 In [`reviewer-notes.txt`](reviewer-notes.txt). The release workflow sends them
 with every version; paste them by hand only when uploading through the website.
 
+## Version notes (0.10.0)
+
+```
+- :screenshot takes a screenshot from the top of the page down to as far as you've scrolled, and opens it in a new tab to copy or save as a PNG. Feeds that keep only the posts near the screen, such as X, come out whole, and a page too long for one image comes in a few parts.
+- Parts of the page that stay put, such as a top bar, show only at the top. Esc, scrolling or clicking stops it.
+- To give it a key, add a line such as map gS screenshot in the options.
+```
+
 ## Version notes (0.9.1)
 
 ```
