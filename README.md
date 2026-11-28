@@ -37,7 +37,7 @@ keeps development files out of it. The listing text lives in
 | `p` `P` | Open the URL on the clipboard (or search for its text), here or in a new tab |
 | `gr` | Open the page in Reader View |
 | `i`, `gi` | Pass keys to the page until Esc; focus a text field |
-| `:` | The command line: any command by name, or a Vim word such as `:q` or `:tabnew` |
+| `:` | The command line: any command by name, or a Vim word such as `:q` or `:tabnew`; `:screenshot` takes a screenshot of the page |
 
 A count repeats or scales a command: `5j`, `3K`. Holding `j`, `k`, `h` or `l`
 glides smoothly rather than jumping (unless smooth scrolling is off). Esc
@@ -121,6 +121,26 @@ Vim words that mean something in a browser:
 As you type, the line says what Enter will do. Tab completes a command's name
 (again for the next one), Up and Down bring back earlier lines, and a line that
 can't run says why and stays open to be fixed.
+
+## Screenshots
+
+`:screenshot` takes a screenshot from the top of the page down to as far as
+you've scrolled, and opens it in a new tab, where you can copy it or save it as
+a PNG. So scroll as far as you want it to go first: on a feed that keeps
+loading more, that's where it stops. To give it a key, add a line such as
+`map gS screenshot` in the options.
+
+Vimov scrolls back to the top and down again a screen at a time, and takes a
+picture of each screen as it shows. Feeds that keep only the posts near the
+screen, such as X, come out whole this way, where Firefox's own "Save full
+page" leaves them blank. Parts of the page that stay put while it scrolls, such
+as a top bar or a side menu, show only at the top. Esc stops it, and so does
+scrolling or clicking. A page too long for one image comes as a few, since
+Firefox keeps an image under 32,767 pixels tall.
+
+In a web app that scrolls a panel rather than the page, such as Gmail, it takes
+the largest one you've scrolled. Frames in the page come out as they show on
+screen; one with a scrollbar of its own shows only the part in view.
 
 ## Configure
 

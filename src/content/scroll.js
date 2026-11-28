@@ -193,5 +193,5 @@ Vimov.scroll = (() => {
     lastTarget = el;
   }
 
-  return { by, to, press, setTarget };
+  return { by, to, press, setTarget, target, docScroller };
 })();

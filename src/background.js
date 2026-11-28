@@ -51,6 +51,19 @@ const handlers = {
   openResult: ({ result, newTab }, tab) => Sources.open(result, { newTab, tab }),
   removeResult: ({ result }) => Sources.remove(result),
   tally: (counts) => tally(counts),
+  // :screenshot (src/content/screenshot.js) runs in the top frame.
+  startScreenshot: (_, tab) => browser.tabs.sendMessage(tab.id, { cmd: 'screenshot' }, { frameId: 0 }),
+  shotStart: ({ width, height, title, url }, tab) => {
+    shots.set(tab.id, { stitcher: new Vimov.Stitcher({ width, height }), title, url, when: Date.now() });
+  },
+  shotTake: (screen, tab) => takeScreen(screen, tab),
+  shotFinish: (_, tab) => finishShot(tab),
+  shotCancel: (_, tab) => {
+    shots.delete(tab.id);
+    return showButton(tab.id, tab.url);
+  },
+  // From the tab that shows a screenshot (src/shot/shot.js).
+  shotResult: ({ id }) => shotResults.get(id)?.shot ?? null,
 };
 
 // Tabs in the window that aren't hidden (Firefox can hide tabs).
@@ -95,6 +108,57 @@ function tally(counts) {
     .catch((err) => console.error('Vimov:', err));
   return tallying;
 }
+
+// Screenshots being taken, by tab; and those taken, by the id in the address
+// of the tab that shows them, until that tab closes.
+const shots = new Map();
+const shotResults = new Map(); // id → { tabId, shot: { title, url, when, parts } }
+
+// A picture of the screen as it is now, added to the screenshot. The
+// toolbar button shows how far along it is.
+async function takeScreen({ top, rect, viewport, progress }, tab) {
+  const shot = shots.get(tab.id);
+  if (!shot) throw new Error('Screenshot stopped');
+  // Firefox takes a picture of the tab in front, so it has to be this one.
+  if (!(await browser.tabs.get(tab.id))?.active) throw new Error('Screenshot stopped: its tab went to the background');
+  let data;
+  try {
+    data = await browser.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
+  } catch (err) {
+    console.error('Vimov:', err);
+    throw new Error('Firefox didn’t let Vimov take a picture of this page');
+  }
+  const image = await createImageBitmap(await (await fetch(data)).blob());
+  try {
+    shot.stitcher.draw(image, { top, rect, viewport });
+  } finally {
+    image.close?.();
+  }
+  browser.action.setBadgeText({ tabId: tab.id, text: `${Math.round(progress * 100)}%` }).catch(() => {});
+}
+
+// Puts the pictures together and opens them in a tab beside the page.
+async function finishShot(tab) {
+  const shot = shots.get(tab.id);
+  if (!shot) throw new Error('Screenshot stopped');
+  shots.delete(tab.id);
+  try {
+    const parts = await shot.stitcher.finish();
+    const id = crypto.randomUUID();
+    // Kept before the tab opens, so it's there when the tab asks.
+    const entry = { tabId: null, shot: { title: shot.title, url: shot.url, when: shot.when, parts } };
+    shotResults.set(id, entry);
+    const url = `${browser.runtime.getURL('src/shot/shot.html')}#${id}`;
+    entry.tabId = (await browser.tabs.create({ url, index: tab.index + 1, openerTabId: tab.id })).id;
+  } finally {
+    showButton(tab.id, tab.url).catch(() => {});
+  }
+}
+
+browser.tabs.onRemoved.addListener((tabId) => {
+  shots.delete(tabId);
+  for (const [id, { tabId: shown }] of shotResults) if (shown === tabId) shotResults.delete(id);
+});
 
 browser.runtime.onMessage.addListener((message, sender) => {
   const handler = Object.hasOwn(handlers, message?.cmd) ? handlers[message.cmd] : null;

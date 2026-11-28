@@ -106,6 +106,8 @@ Vimov.actions = (() => {
 
     // The bar opens in the top frame; from an iframe, the background page passes it up.
     search: (n, options) => (window.top === window ? Vimov.search.open(options) : Vimov.bg('openSearch', options)),
+    // The screenshot is of the page, so it's taken from the top frame too.
+    screenshot: () => (window.top === window ? Vimov.screenshot.start() : Vimov.bg('startScreenshot')),
 
     nextTab: tabCommand('nextTab'),
     previousTab: tabCommand('previousTab'),

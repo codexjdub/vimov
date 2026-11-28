@@ -61,6 +61,7 @@ globalThis.Vimov = globalThis.Vimov || {};
       options: { newTab: 'boolean' },
     },
     readerView: { category: 'Page', description: 'Open the page in Reader View' },
+    screenshot: { category: 'Page', description: 'Take a screenshot, from the top of the page down to as far as you’ve scrolled' },
     focusInput: { category: 'Page', description: 'Focus the first text field in view (nth with a count)' },
     enterInsertMode: { category: 'Page', description: 'Pass every key to the page until Esc' },
     openUrl: {

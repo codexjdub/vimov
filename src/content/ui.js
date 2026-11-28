@@ -495,6 +495,11 @@ Vimov.ui = (() => {
     // Whether a node is Vimov's own UI, as the page sees it.
     owns: (node) => !!host && node === host,
 
+    // Keeps all of Vimov's UI off the screen while a screenshot is taken.
+    setHidden(hidden) {
+      host?.style.setProperty('visibility', hidden ? 'hidden' : 'visible', 'important');
+    },
+
     // The persistent HUD text: the current mode or the keys typed so far.
     setStatus(text) {
       status = text;

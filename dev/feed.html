@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vimov feed</title>
+  <style>
+    /* A feed that keeps only the posts near the screen, as X does, with a
+       side menu that stays put and a header that sticks: what :screenshot
+       has to cope with. Firefox's own "Save full page" draws most of it
+       blank. */
+    body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: #f4f4f5; color: #18181b; }
+    nav { position: fixed; top: 0; left: 0; bottom: 0; width: 180px; padding: 20px; box-sizing: border-box; background: #18181b; color: #fafafa; }
+    nav a { display: block; padding: 8px 0; color: inherit; }
+    main { margin-left: 180px; max-width: 600px; }
+    header { position: sticky; top: 0; z-index: 1; padding: 14px 20px; background: #ffffffee; border-bottom: 1px solid #e4e4e7; font-weight: 700; }
+    #feed { position: relative; }
+    .post { position: absolute; left: 0; right: 0; height: 140px; box-sizing: border-box; padding: 16px 20px; border-bottom: 1px solid #e4e4e7; }
+    .post b { display: block; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <nav><b>Vimov feed</b><a href="#">Home</a><a href="#">Explore</a><a href="#">Notifications</a></nav>
+  <main>
+    <header>Home</header>
+    <div id="feed"></div>
+  </main>
+  <script>
+    const COUNT = 200;
+    const HEIGHT = 140;
+    const feed = document.getElementById('feed');
+    feed.style.height = `${COUNT * HEIGHT}px`;
+    // Each post's own color, so a picture shows which posts made it in.
+    const color = (i) => `hsl(${(i * 37) % 360} 70% 88%)`;
+    function render() {
+      const top = scrollY - feed.offsetTop;
+      const first = Math.max(0, Math.floor(top / HEIGHT) - 2);
+      const last = Math.min(COUNT, Math.ceil((top + innerHeight) / HEIGHT) + 2);
+      const posts = [];
+      for (let i = first; i < last; i++) {
+        const post = document.createElement('article');
+        post.className = 'post';
+        post.style.top = `${i * HEIGHT}px`;
+        post.style.background = color(i);
+        post.innerHTML = `<b>Post ${i + 1}</b>Only the posts near the screen are in the page.`;
+        posts.push(post);
+      }
+      feed.replaceChildren(...posts);
+    }
+    addEventListener('scroll', render, { passive: true });
+    addEventListener('resize', render);
+    render();
+  </script>
+</body>
+</html>

@@ -14,8 +14,11 @@ function setup({
   tabs = [{ id: 1, index: 0, windowId: 1, active: true, url: 'https://example.com/' }],
   browserSettings, // its verticalTabs only on Firefox 142 and later
   browserInfo = { name: 'Firefox' }, // Zen adds `zen`
+  capture = async () => 'data:image/png;base64,screen', // tabs.captureVisibleTab
 } = {}) {
   const opened = [];
+  const captured = []; // [windowId, options] for each picture taken
+  const stitched = []; // the stand-in Stitchers made for screenshots
   const sent = []; // messages to content scripts: [tabId, message, options]
   const stored = { exclusions };
   const local = {};
@@ -33,7 +36,11 @@ function setup({
       query: async () => tabs,
       get: async (id) => tabs.find((t) => t.id === id),
       toggleReaderMode: async (id) => opened.push(['reader', id]),
-      create: async ({ url }) => opened.push(['tab', url]),
+      create: async ({ url, index }) => ({ id: 100 + opened.push(index === undefined ? ['tab', url] : ['tab', url, index]) }),
+      captureVisibleTab: async (windowId, options) => {
+        captured.push([windowId, options]);
+        return capture();
+      },
       update: async (id, { active }) => {
         if (active) for (const t of tabs) t.active = t.id === id;
         return tabs.find((t) => t.id === id);
@@ -50,6 +57,7 @@ function setup({
       },
       onActivated: event(),
       onUpdated: event(),
+      onRemoved: event(),
     },
     browserSettings,
     storage: {
@@ -76,14 +84,33 @@ function setup({
     },
   };
   const navigator = { clipboard: { readText: async () => clipboard, writeText: async () => {} } };
-  const ctx = load(SHARED, { browser, navigator });
+  const ctx = load(SHARED, {
+    browser,
+    navigator,
+    fetch: async (url) => ({ blob: async () => ({ url }) }),
+    createImageBitmap: async (blob) => ({ from: blob.url, close() {} }),
+    crypto: { randomUUID: () => `shot-${stitched.length}` },
+  });
+  // Joining the pictures (src/stitch.js), as a stand-in that keeps what it's given.
+  ctx.Vimov.Stitcher = class {
+    constructor(size) {
+      Object.assign(this, { size, screens: [] });
+      stitched.push(this);
+    }
+    draw(image, where) {
+      this.screens.push({ image: image.from, ...where });
+    }
+    async finish() {
+      return this.screens.map((_, i) => `png ${i + 1}`);
+    }
+  };
   ctx.Sources = {
     search,
     forText: async (text) => ({ type: 'url', url: text }),
     open: async (result, options) => opened.push([result, options]),
   };
   run(ctx, ['src/shared/stats.js', 'src/background.js']);
-  return { browser, opened, sent, stored, local, button };
+  return { browser, opened, sent, stored, local, button, captured, stitched };
 }
 
 // This week's Monday, as stats.js writes it.
@@ -324,4 +351,61 @@ test('counts sent at once are all kept, one batch after another', async () => {
     [local.stats.week, local.stats.links, local.stats.px, local.stats.tabs],
     [ctxWeek(), 3, 360, 0],
   );
+});
+
+test('a screenshot takes a picture of each screen, opens beside the page, and is kept until its tab closes', async () => {
+  const { browser, captured, stitched, opened, button } = setup({ exclusions: 'example.com' });
+  const tab = { id: 1, index: 0, windowId: 1, url: 'https://example.com/' };
+  const send = async (message) => (await browser.runtime.onMessage.fire(message, { tab }))[0];
+  const rect = { left: 0, top: 0, width: 1000, height: 800 };
+
+  await send({ cmd: 'shotStart', width: 1000, height: 1600, title: 'A page', url: tab.url });
+  await send({ cmd: 'shotTake', top: 0, rect, viewport: 1000, progress: 0.5 });
+  assert.strictEqual(button[1].badge, '50%');
+  await send({ cmd: 'shotTake', top: 800, rect, viewport: 1000, progress: 1 });
+  assert.deepStrictEqual(plain(captured), [[1, { format: 'png' }], [1, { format: 'png' }]]);
+  assert.deepStrictEqual(plain(stitched[0].size), { width: 1000, height: 1600 });
+  assert.deepStrictEqual(stitched[0].screens.map((s) => s.top), [0, 800]);
+  assert.strictEqual(stitched[0].screens[0].image, 'data:image/png;base64,screen');
+
+  assert.strictEqual((await send({ cmd: 'shotFinish' })).ok, true);
+  const [[, url, index]] = opened;
+  assert.strictEqual(url, 'moz-extension://vimov/src/shot/shot.html#shot-1');
+  assert.strictEqual(index, 1); // just after the page
+  assert.strictEqual(button[1].badge, 'off'); // the button says what it said before
+
+  const shown = await send({ cmd: 'shotResult', id: 'shot-1' });
+  assert.deepStrictEqual(plain(shown.result.parts), ['png 1', 'png 2']);
+  assert.strictEqual(shown.result.title, 'A page');
+  await browser.tabs.onRemoved.fire(101); // the tab showing it closes
+  assert.strictEqual((await send({ cmd: 'shotResult', id: 'shot-1' })).result, null);
+});
+
+test('a screenshot stops when its tab leaves the front, and a refused picture reads plainly', async () => {
+  const tabs = [{ id: 1, index: 0, windowId: 1, active: false, url: 'https://example.com/' }];
+  const away = setup({ tabs });
+  const tab = tabs[0];
+  const rect = { left: 0, top: 0, width: 1000, height: 800 };
+  const take = { cmd: 'shotTake', top: 0, rect, viewport: 1000, progress: 1 };
+  await away.browser.runtime.onMessage.fire({ cmd: 'shotStart', width: 1000, height: 800 }, { tab });
+  const [moved] = await away.browser.runtime.onMessage.fire(take, { tab });
+  assert.strictEqual(moved.error, 'Screenshot stopped: its tab went to the background');
+  assert.strictEqual(away.captured.length, 0);
+
+  const refused = setup({ capture: async () => { throw new Error('Missing activeTab permission'); } });
+  const front = { id: 1, index: 0, windowId: 1 };
+  await refused.browser.runtime.onMessage.fire({ cmd: 'shotStart', width: 1000, height: 800 }, { tab: front });
+  const [reply] = await refused.browser.runtime.onMessage.fire(take, { tab: front });
+  assert.strictEqual(reply.error, 'Firefox didn’t let Vimov take a picture of this page');
+
+  // One stopped from the page is dropped.
+  await refused.browser.runtime.onMessage.fire({ cmd: 'shotCancel' }, { tab: front });
+  const [after] = await refused.browser.runtime.onMessage.fire(take, { tab: front });
+  assert.strictEqual(after.error, 'Screenshot stopped');
+});
+
+test('from an iframe, a screenshot is taken in the top frame', async () => {
+  const { browser, sent } = setup();
+  await browser.runtime.onMessage.fire({ cmd: 'startScreenshot' }, { tab: { id: 1 } });
+  assert.deepStrictEqual(plain(sent), [[1, { cmd: 'screenshot' }, { frameId: 0 }]]);
 });

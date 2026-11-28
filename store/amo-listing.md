@@ -69,6 +69,7 @@ Vimov lets you browse without reaching for the mouse, using keys borrowed from V
 <ul>
 <li>: opens a command line: any command by name, or Vim's :q, :tabnew, :e and :b</li>
 <li>It says what Enter will do as you type; Tab completes the name, Up brings back the last line</li>
+<li>:screenshot takes a screenshot from the top of the page down to as far as you've scrolled, even on feeds like X, to copy or save as a PNG</li>
 </ul>
 
 <b>Make it yours</b>
